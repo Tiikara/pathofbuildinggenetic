@@ -13,8 +13,8 @@ end
 function GeneticSolver:Solve()
     local population = { }
 
-    local populationSize = 2
-    local iterationCount = 10
+    local populationSize = 1000
+    local iterationCount = 100
 
     local populationCount = 0
 

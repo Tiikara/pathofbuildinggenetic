@@ -39,7 +39,7 @@ end
 
 function GeneticSolverDna:Mutate(probabilityToMutateGen)
     for _, treeNode in pairs(self.build.spec.nodes) do
-        local isMutated = math.random(100000) < probabilityToMutateGen * 1000000
+        local isMutated = math.random() < probabilityToMutateGen
 
         if isMutated then
             if self.nodesDna[treeNode.id] == nil
@@ -85,13 +85,9 @@ function GeneticSolverDna:ConvertDnaToBuild()
 
         local node = self.build.spec.nodes[nodeId]
 
-        if node.type ~= "Mastery" and node.path then
+        if node.type ~= "Mastery" and node.path and not node.ascendancyName then
             countNodesToAllocate = countNodesToAllocate + 1
             nodesToAllocate[countNodesToAllocate] = node
-
-            if countNodesToAllocate == 100 then
-                break
-            end
         end
     end
 
@@ -166,7 +162,7 @@ function GeneticSolverDna:GetFitnessScore()
 
     local stats = env.player.output
 
-    self.fitnessScore = csvs * stats.CombinedDPS * stats.CombinedDPS
+    self.fitnessScore = csvs * (stats.CombinedDPS)
 
     return self.fitnessScore
 end
