@@ -5,12 +5,16 @@ local GeneticSolver = newClass("GeneticSolver", function(self, build)
     self.build = build
 end)
 
+function GeneticSolver:PrepareTreePaths()
+    self.build.spec:ResetNodes()
+    self.build.spec:BuildAllDependsAndPaths()
+end
 
 function GeneticSolver:Solve()
     local population = { }
 
-    local populationSize = 1110
-    local iterationCount = 700
+    local populationSize = 2
+    local iterationCount = 10
 
     local populationCount = 0
 
@@ -20,6 +24,13 @@ function GeneticSolver:Solve()
         populationCount = populationCount + 1
         population[populationCount] = dna
     end
+
+    local dna = new("GeneticSolverDna", self.build)
+    dna:GenerateFromCurrentBuild()
+    populationCount = populationCount + 1
+    population[populationCount] = dna
+
+    self:PrepareTreePaths()
 
     table.sort(population, function(dna1, dna2) return dna1:GetFitnessScore() > dna2:GetFitnessScore()  end)
 
@@ -68,6 +79,7 @@ function GeneticSolver:Solve()
     end
 
     population[1]:ConvertDnaToBuild()
+    self.build.spec:BuildAllDependsAndPaths()
 
     self.build.buildFlag = true
 end

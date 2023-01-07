@@ -27,6 +27,16 @@ function GeneticSolverDna:Generate()
     self:Mutate(10 * 1.0 / 1200.0)
 end
 
+function GeneticSolverDna:GenerateFromCurrentBuild()
+    for _, treeNode in pairs(self.build.spec.nodes) do
+        if treeNode.alloc then
+            self.nodesDna[treeNode.id] = 1
+        else
+            self.nodesDna[treeNode.id] = nil
+        end
+    end
+end
+
 function GeneticSolverDna:Mutate(probabilityToMutateGen)
     for _, treeNode in pairs(self.build.spec.nodes) do
         local isMutated = math.random(100000) < probabilityToMutateGen * 1000000
@@ -66,8 +76,8 @@ function GeneticSolverDna:CalcCsv(x, weight, target)
 end
 
 function GeneticSolverDna:ConvertDnaToBuild()
-    local countIdsNodesToAllocate = 0
-    local idsNodesLeftToAllocate = {}
+    local countNodesToAllocate = 0
+    local nodesToAllocate = {}
     for nodeId, v in pairs(self.nodesDna) do
         if v == nil then
             error("ibats in fitnessScore")
@@ -75,54 +85,64 @@ function GeneticSolverDna:ConvertDnaToBuild()
 
         local node = self.build.spec.nodes[nodeId]
 
-        if node.type ~= "Mastery" then
-            idsNodesLeftToAllocate[nodeId] = 1
-            countIdsNodesToAllocate = countIdsNodesToAllocate + 1
+        if node.type ~= "Mastery" and node.path then
+            countNodesToAllocate = countNodesToAllocate + 1
+            nodesToAllocate[countNodesToAllocate] = node
+
+            if countNodesToAllocate == 100 then
+                break
+            end
         end
     end
 
     self.build.spec:ResetNodes()
-    self.build.spec:BuildAllDependsAndPaths()
+
+    table.sort(nodesToAllocate, function(node1, node2)
+        return node1.pathDist < node2.pathDist
+    end)
 
     local nodesSelected = 0
+    for _, node in pairs(nodesToAllocate) do
+        if not node.alloc then
+            local wasLinked = false
+            for _, nodeLinked in pairs(node.linked) do
+                if nodeLinked.alloc then
+                    node.alloc = true
+                    self.build.spec.allocNodes[node.id] = node
+                    wasLinked = true
 
-    while countIdsNodesToAllocate > 0 do
-        local closestNode = nil
+                    nodesSelected = nodesSelected + 1
 
-        for nodeId in pairs(idsNodesLeftToAllocate) do
-            if closestNode == nil then
-                closestNode = self.build.spec.nodes[nodeId]
-            else
-                if closestNode.pathDist > self.build.spec.nodes[nodeId].pathDist then
-                    closestNode = self.build.spec.nodes[nodeId]
-                end
-            end
-        end
-
-        idsNodesLeftToAllocate[closestNode.id] = nil
-
-        if closestNode.path and not closestNode.alloc then
-            --self.build.spec:AllocNode(closestNode, nil)
-            for _, pathNode in ipairs(closestNode.path) do
-                pathNode.alloc = true
-                self.build.spec.allocNodes[pathNode.id] = pathNode
-
-                nodesSelected = nodesSelected + 1
-
-                if nodesSelected == 100 then
                     break
                 end
             end
 
-            self.build.spec:BuildAllDependsAndPaths()
+            if not wasLinked then
+                for _, pathNode in ipairs(node.path) do
+                    if not pathNode.alloc then
+                        pathNode.alloc = true
+                        self.build.spec.allocNodes[pathNode.id] = pathNode
 
-            if nodesSelected == 100 then
-                break
+                        nodesSelected = nodesSelected + 1
+
+                        if nodesSelected == 100 then
+                            break
+                        end
+                    end
+                end
+
+                if nodesSelected == 100 then
+                    break
+                end
+            else
+                if nodesSelected == 100 then
+                    break
+                end
             end
         end
-
-        countIdsNodesToAllocate = countIdsNodesToAllocate - 1
     end
+
+    return nodesSelected
 end
 
 function GeneticSolverDna:GetFitnessScore()
@@ -130,9 +150,7 @@ function GeneticSolverDna:GetFitnessScore()
         return self.fitnessScore
     end
 
-    self:ConvertDnaToBuild()
-
-    local usedNodeCount = self.build.spec:CountAllocNodes()
+    local usedNodeCount = self:ConvertDnaToBuild()
     local totalPoints = 100
 
     local csvs = 1
@@ -143,7 +161,10 @@ function GeneticSolverDna:GetFitnessScore()
         csvs = csvs * 1 + self.usedNodeCountFactor * math.log(totalPoints + 1 - usedNodeCount);
     end
 
-    local stats = calcs.buildOutput(self.build, "CALCS").player.output
+    local env, cachedPlayerDB, cachedEnemyDB, cachedMinionDB = calcs.initEnv(self.build, "MAIN")
+    calcs.perform(env)
+
+    local stats = env.player.output
 
     self.fitnessScore = csvs * stats.CombinedDPS * stats.CombinedDPS
 
