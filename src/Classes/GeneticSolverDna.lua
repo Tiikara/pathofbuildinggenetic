@@ -12,6 +12,14 @@ local GeneticSolverDna = newClass("GeneticSolverDna", function(self, build)
 
 end)
 
+function GeneticSolverDna:AsTable()
+    return self.nodesDna
+end
+
+function GeneticSolverDna:InitFromTable(dnaTable)
+    self.nodesDna = dnaTable
+end
+
 function GeneticSolverDna:Clone()
     local newGeneticSolverDna = new("GeneticSolverDna", self.build)
     newGeneticSolverDna.fitnessScore = self.fitnessScore
@@ -162,7 +170,7 @@ function GeneticSolverDna:GetFitnessScore()
 
     local stats = env.player.output
 
-    self.fitnessScore = csvs * (stats.CombinedDPS)
+    self.fitnessScore = csvs * stats.CombinedDPS
 
     return self.fitnessScore
 end
