@@ -16,7 +16,7 @@ local GeneticSolver = newClass("GeneticSolver", function(self, build)
     self.linda = lanes.linda()
 
     local fitnessWorkers = { }
-    for i=1,4 do
+    for i=1,21 do
         fitnessWorkers[i] = lanes.gen("*", GeneticSolverWorker)(self.linda)
 
         --self.linda:receive("GeneticSolverWorkerInitialized")
@@ -44,12 +44,12 @@ function GeneticSolver:Solve()
 
     local population = { }
 
-    local populationSize = 1000
+    local populationMaxGenerationSize = 5000
     local iterationCount = 100
 
     local populationCount = 0
 
-    for populationNum=1,populationSize do
+    for populationNum=1, populationMaxGenerationSize do
         local dna = new("GeneticSolverDna", self.build)
         dna:Generate()
         populationCount = populationCount + 1
@@ -69,7 +69,7 @@ function GeneticSolver:Solve()
 
         local startFromFitnessScore = populationCount + 1
 
-        local countOfAdded = populationSize/2
+        local countOfAdded = populationMaxGenerationSize /2
         for addedNum=1,countOfAdded do
             local generatedDna = new("GeneticSolverDna", self.build)
             generatedDna:Generate()
@@ -77,9 +77,9 @@ function GeneticSolver:Solve()
             population[populationCount] = generatedDna
         end
 
-        for populationNum=1,populationSize do
-            local cupOfMutationChance = populationSize-populationNum
-            local isMutated = math.random(populationSize) < cupOfMutationChance
+        for populationNum=1, populationMaxGenerationSize do
+            local cupOfMutationChance = populationMaxGenerationSize -populationNum
+            local isMutated = math.random(populationMaxGenerationSize) < cupOfMutationChance
 
             if isMutated then
                 local mutatedDna = population[populationNum]:Clone()
@@ -94,7 +94,7 @@ function GeneticSolver:Solve()
 
         table.sort(population, function(dna1, dna2) return dna1:GetFitnessScore() > dna2:GetFitnessScore()  end)
 
-        local countOfFucks = populationSize / 2
+        local countOfFucks = populationMaxGenerationSize / 2
 
         local bastards = self:makeHardFuck(population, populationCount, countOfFucks)
 
@@ -110,18 +110,18 @@ function GeneticSolver:Solve()
         table.sort(population, function(dna1, dna2) return dna1:GetFitnessScore() > dna2:GetFitnessScore()  end)
 
         local zbsPopulation = {}
-        for populationNum=1,populationSize do
+        for populationNum=1, populationMaxGenerationSize do
             zbsPopulation[populationNum] = population[populationNum]
         end
 
         population = zbsPopulation
-        populationCount = populationSize
+        populationCount = populationMaxGenerationSize
     end
 
     self.build.spec:ResetNodes()
     self.build.spec:BuildAllDependsAndPaths()
 
-    population[1]:ConvertDnaToBuild()
+    population[1]:ConvertDnaToBuild(101, 6)
     self.build.spec:BuildAllDependsAndPaths()
 
     self.build.buildFlag = true
