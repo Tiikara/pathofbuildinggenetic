@@ -34,6 +34,9 @@ function GeneticSolver:Solve()
     --dbg.tcpListen('localhost', 9966)
     --dbg.waitIDE()
 
+    local targetNormalNodesCount = 101
+    local targetAscendancyNodesCount = 6
+
     local xmlText = self.build:SaveDB("genetic_build.xml")
     local file = io.open("genetic_build.xml", "w+")
     file:write(xmlText)
@@ -121,7 +124,7 @@ function GeneticSolver:Solve()
     self.build.spec:ResetNodes()
     self.build.spec:BuildAllDependsAndPaths()
 
-    population[1]:ConvertDnaToBuild(101, 6)
+    population[1]:ConvertDnaToBuild(targetNormalNodesCount, targetAscendancyNodesCount)
     self.build.spec:BuildAllDependsAndPaths()
 
     self.build.buildFlag = true

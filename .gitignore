@@ -33,3 +33,4 @@ src/Export/ggpk/*.dll
 
 # Timeless Jewels
 src/Data/TimelessJewelData/*.bin
+src/genetic_build.xml

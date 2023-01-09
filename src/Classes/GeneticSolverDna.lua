@@ -119,19 +119,17 @@ function GeneticSolverDna:ConvertDnaToBuild(
     local normalNodesSelected = 0
     for _, node in pairs(normalNodesToAllocate) do
         if not node.alloc then
-            local wasLinked = false
             for _, nodeLinked in pairs(node.linked) do
                 if nodeLinked.alloc then
                     node.alloc = true
                     self.build.spec.allocNodes[node.id] = node
-                    wasLinked = true
 
                     normalNodesSelected = normalNodesSelected + 1
                     break
                 end
             end
 
-            if not wasLinked then
+            if not node.alloc then
                 for _, pathNode in ipairs(node.path) do
                     if not pathNode.alloc then
                         pathNode.alloc = true
@@ -228,6 +226,28 @@ function GeneticSolverDna:GetFitnessScore(targetNormalNodesCount,
 
     csvs = csvs * self:CalcCsv(stats.TotalEHP, 1, 145000)
     csvs = csvs * self:CalcCsv(stats.Life, 1, 3000)
+    if stats.SpellSuppressionChance then
+        csvs = csvs * self:CalcCsv(stats.SpellSuppressionChance, 1, 100)
+    else
+        csvs = csvs * self:CalcCsv(0, 1, 100)
+    end
+
+    if not stats.LifeLeechGainRate then
+        stats.LifeLeechGainRate = 0
+    end
+
+    if not stats.LifeRegenRecovery then
+        stats.LifeRegenRecovery = 0
+    end
+
+    if stats.LifeLeechGainRate + stats.LifeRegenRecovery ~= 0 then
+        csvs = csvs * self:CalcCsv((stats.LifeLeechGainRate + stats.LifeRegenRecovery) / stats.Life, 1, 0.5)
+    else
+        csvs = csvs * self:CalcCsv(0, 1, 0.5)
+    end
+
+    csvs = csvs * self:CalcCsv(stats.LightningResist, 0.9, 90)
+    csvs = csvs * self:CalcCsv(stats.LightningResist, 1, 76)
 
     self.fitnessScore = csvs * stats.CombinedDPS
 
