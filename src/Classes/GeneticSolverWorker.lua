@@ -10,6 +10,8 @@ function GeneticSolverWorker(linda)
 
     dofile('HeadlessWrapper.lua')
 
+    dofile('Classes/GeneticSolverFitnessFunction.lua')
+
     linda:send("GeneticSolverWorkerInitialized", 1)
 
     --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
@@ -52,7 +54,11 @@ function GeneticSolverWorker(linda)
         dna:InitFromTable(dnaTable)
 
         local res = {
-            fitnessScore = dna:GetFitnessScore(101, 6),
+            fitnessScore = GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(
+                    dna,
+                    101,
+                    6
+            ),
             id = id
         }
 

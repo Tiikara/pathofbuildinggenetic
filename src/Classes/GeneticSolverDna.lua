@@ -1,15 +1,10 @@
 math.randomseed(os.clock())
 
-local calcs = LoadModule("Modules/Calcs")
-
-local usedNodeCountWeight = 5
-local usedNodeCountFactor = .0005
-local csvWeightMultiplier = 10
+local maxMutateClusterSize = 4
 
 local GeneticSolverDna = newClass("GeneticSolverDna", function(self, build)
     self.build = build
     self.nodesDna = { }
-    self.fitnessScore = nil
 end)
 
 function GeneticSolverDna:AsTable()
@@ -29,10 +24,6 @@ function GeneticSolverDna:Clone()
     end
 
     return newGeneticSolverDna
-end
-
-function GeneticSolverDna:Generate()
-    self:Mutate(10 * 1.0 / 1200.0)
 end
 
 function GeneticSolverDna:GenerateFromCurrentBuild()
@@ -78,11 +69,6 @@ function GeneticSolverDna:Selection(partnerDna)
     return newGeneticSolverDna
 end
 
-function GeneticSolverDna:CalcCsv(x, weight, target)
-    x = math.min(x, target);
-    return math.exp(weight * csvWeightMultiplier * x / target) / math.exp(weight * csvWeightMultiplier);
-end
-
 function GeneticSolverDna:ConvertDnaToBuild(
         targetNormalNodesCount,
         targetAscendancyNodesCount
@@ -116,6 +102,10 @@ function GeneticSolverDna:ConvertDnaToBuild(
         return node1.pathDist < node2.pathDist
     end)
 
+    table.sort(ascendancyNodesToAllocate, function(node1, node2)
+        return node1.pathDist < node2.pathDist
+    end)
+
     local normalNodesSelected = 0
     for _, node in pairs(normalNodesToAllocate) do
         if not node.alloc then
@@ -136,19 +126,7 @@ function GeneticSolverDna:ConvertDnaToBuild(
                         self.build.spec.allocNodes[pathNode.id] = pathNode
 
                         normalNodesSelected = normalNodesSelected + 1
-
-                        if normalNodesSelected == targetNormalNodesCount then
-                            break
-                        end
                     end
-                end
-
-                if normalNodesSelected == targetNormalNodesCount then
-                    break
-                end
-            else
-                if normalNodesSelected == targetNormalNodesCount then
-                    break
                 end
             end
         end
@@ -176,81 +154,12 @@ function GeneticSolverDna:ConvertDnaToBuild(
                         self.build.spec.allocNodes[pathNode.id] = pathNode
 
                         ascendancyNodesSelected = ascendancyNodesSelected + 1
-
-                        if ascendancyNodesSelected == targetAscendancyNodesCount then
-                            break
-                        end
                     end
-                end
-
-                if ascendancyNodesSelected == targetAscendancyNodesCount then
-                    break
-                end
-            else
-                if ascendancyNodesSelected == targetAscendancyNodesCount then
-                    break
                 end
             end
         end
     end
 
     return normalNodesSelected, ascendancyNodesSelected
-end
-
-function GeneticSolverDna:GetFitnessScore(targetNormalNodesCount,
-                                          targetAscendancyNodesCount)
-    if self.fitnessScore ~= nil then
-        return self.fitnessScore
-    end
-
-    local usedNormalNodeCount, usedAscendancyNodeCount = self:ConvertDnaToBuild()
-
-    local csvs = 1
-
-    if usedNormalNodeCount > targetNormalNodesCount then
-        csvs = csvs * self:CalcCsv(2 * targetNormalNodesCount - usedNormalNodeCount, usedNodeCountWeight, targetNormalNodesCount)
-    elseif (usedNormalNodeCount < targetNormalNodesCount) then
-        csvs = csvs * 1 + usedNodeCountFactor * math.log(targetNormalNodesCount + 1 - usedNormalNodeCount);
-    end
-
-    if usedAscendancyNodeCount > targetAscendancyNodesCount then
-        csvs = csvs * self:CalcCsv(2 * targetAscendancyNodesCount - usedAscendancyNodeCount, usedNodeCountWeight, targetAscendancyNodesCount)
-    elseif (usedAscendancyNodeCount < targetAscendancyNodesCount) then
-        csvs = csvs * 1 + usedNodeCountFactor * math.log(targetAscendancyNodesCount + 1 - usedAscendancyNodeCount);
-    end
-
-    local env, cachedPlayerDB, cachedEnemyDB, cachedMinionDB = calcs.initEnv(self.build, "MAIN")
-    calcs.perform(env)
-
-    local stats = env.player.output
-
-    csvs = csvs * self:CalcCsv(stats.TotalEHP, 1, 145000)
-    csvs = csvs * self:CalcCsv(stats.Life, 1, 3000)
-    if stats.SpellSuppressionChance then
-        csvs = csvs * self:CalcCsv(stats.SpellSuppressionChance, 1, 100)
-    else
-        csvs = csvs * self:CalcCsv(0, 1, 100)
-    end
-
-    if not stats.LifeLeechGainRate then
-        stats.LifeLeechGainRate = 0
-    end
-
-    if not stats.LifeRegenRecovery then
-        stats.LifeRegenRecovery = 0
-    end
-
-    if stats.LifeLeechGainRate + stats.LifeRegenRecovery ~= 0 then
-        csvs = csvs * self:CalcCsv((stats.LifeLeechGainRate + stats.LifeRegenRecovery) / stats.Life, 1, 0.5)
-    else
-        csvs = csvs * self:CalcCsv(0, 1, 0.5)
-    end
-
-    csvs = csvs * self:CalcCsv(stats.LightningResist, 0.9, 90)
-    csvs = csvs * self:CalcCsv(stats.LightningResist, 1, 76)
-
-    self.fitnessScore = csvs * stats.CombinedDPS
-
-    return self.fitnessScore
 end
 
