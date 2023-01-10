@@ -5,7 +5,7 @@ function GeneticSolverWorker(linda)
     --dbg.tcpListen('localhost', 9966)
     --dbg.waitIDE()
 
-    -- Run new VM instance
+    -- Initialize PoB VM instance
     arg = { }
 
     dofile('HeadlessWrapper.lua')
@@ -56,7 +56,7 @@ function GeneticSolverWorker(linda)
         local res = {
             fitnessScore = GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(
                     dna,
-                    101,
+                    98,
                     6
             ),
             id = id

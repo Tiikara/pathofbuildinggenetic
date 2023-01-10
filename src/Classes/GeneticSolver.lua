@@ -29,13 +29,13 @@ local GeneticSolver = newClass("GeneticSolver", function(self, build)
 end)
 
 function GeneticSolver:Solve()
-    --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x86/?.dll'
+    --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
     --local dbg = require('emmy_core')
     --dbg.tcpListen('localhost', 9966)
     --dbg.waitIDE()
 
-    local _targetNormalNodesCount = 101
-    local _targetAscendancyNodesCount = 6
+    local targetNormalNodesCount = 98
+    local targetAscendancyNodesCount = 6
 
     local xmlText = self.build:SaveDB("genetic_build.xml")
     local file = io.open("genetic_build.xml", "w+")
@@ -45,14 +45,14 @@ function GeneticSolver:Solve()
     self.linda:set("GeneticSolverBuildNum", self.buildNum)
     self.buildNum = self.buildNum + 1
 
-    local iterationCount = 100
+    local generationCount = 200
 
     local population
     local populationCount
 
     population, populationCount = self:GeneratePopulationDistribution()
 
-    local populationMaxGenerationSize = populationCount
+    local populationMaxGenerationSize = 5000
 
     local dna = new("GeneticSolverDna", self.build)
     dna:GenerateFromCurrentBuild()
@@ -61,21 +61,33 @@ function GeneticSolver:Solve()
 
     self:CalcFitnessScoreWithWorkers(population, 1, populationCount)
 
-    for _=1,iterationCount do
+    table.sort(population, function(dna1, dna2) return dna1.fitnessScore > dna2.fitnessScore  end)
+
+    local treeNodesArray = {}
+    local treeNodesCount = 0
+
+    for _,treeNode in pairs(self.build.spec.nodes) do
+        treeNodesCount = treeNodesCount + 1
+        treeNodesArray[treeNodesCount] = treeNode
+    end
+
+    local bestDna = population[1]
+
+    for _=1, generationCount do
 
         local mutatedDnas = {}
 
         for populationNum=1, populationCount do
             local mutatedDna = population[populationNum]:Clone()
-            mutatedDna:Mutate(0.0001)
+            mutatedDna:MutateWithCluster(treeNodesArray, treeNodesCount)
 
             mutatedDnas[populationNum] = mutatedDna
         end
 
         self:CalcFitnessScoreWithWorkers(mutatedDnas, 1, populationCount)
 
-        local iterateCount = populationCount
-        for populationNum=1, iterateCount do
+        local curPopulationCount = populationCount
+        for populationNum=1, curPopulationCount do
             local mutatedDna = mutatedDnas[populationNum]
 
             populationCount = populationCount + 1
@@ -84,51 +96,45 @@ function GeneticSolver:Solve()
 
         table.sort(population, function(dna1, dna2) return dna1.fitnessScore > dna2.fitnessScore  end)
 
-        local countOfFucks = math.floor(populationMaxGenerationSize * 0.5)
+        local countOfFucks = populationMaxGenerationSize / 2
+        if countOfFucks > populationCount then
+            countOfFucks = populationCount
+        end
 
-        local bastards = self:makeHardFuck(population, populationCount, countOfFucks)
+        local bastards = self:makeHardFuck(population, populationCount, countOfFucks, treeNodesArray, treeNodesCount)
 
         self:CalcFitnessScoreWithWorkers(bastards, 1, countOfFucks)
 
-        for _,bastardDna in pairs(bastards) do
-            populationCount = populationCount + 1
-            population[populationCount] = bastardDna
-        end
-
-        table.sort(population, function(dna1, dna2) return dna1.fitnessScore > dna2.fitnessScore  end)
-
         local zbsPopulation = {}
         local zbsPopulationCount = 0
-        for populationNum=1, populationMaxGenerationSize do
-            if population[populationNum].fitnessScore == nil then
-                error("Population fitness score is nil.")
-            end
-
+        for populationNum=1, populationCount do
             zbsPopulationCount = zbsPopulationCount + 1
             zbsPopulation[zbsPopulationCount] = population[populationNum]
-        end
 
-        for populationNum=populationMaxGenerationSize + 1, populationCount do
-            if population[populationNum].fitnessScore == nil then
-                error("Population fitness score is nil.")
-            end
-
-            local isAlive = math.random() > populationNum / populationCount
-
-            if isAlive then
-                zbsPopulationCount = zbsPopulationCount + 1
-                zbsPopulation[zbsPopulationCount] = population[populationNum]
+            if zbsPopulationCount == populationMaxGenerationSize / 2 then
+                break
             end
         end
+
+        for _,bastardDna in pairs(bastards) do
+            zbsPopulationCount = zbsPopulationCount + 1
+            zbsPopulation[zbsPopulationCount] = bastardDna
+        end
+
+        table.sort(zbsPopulation, function(dna1, dna2) return dna1.fitnessScore > dna2.fitnessScore  end)
 
         population = zbsPopulation
         populationCount = zbsPopulationCount
+
+        if population[1].fitnessScore > bestDna.fitnessScore then
+            bestDna = population[1]
+        end
     end
 
     self.build.spec:ResetNodes()
     self.build.spec:BuildAllDependsAndPaths()
 
-    population[1]:ConvertDnaToBuild()
+    bestDna:ConvertDnaToBuild(targetNormalNodesCount, targetAscendancyNodesCount)
     self.build.spec:BuildAllDependsAndPaths()
 
     self.build.buildFlag = true
@@ -148,21 +154,18 @@ function GeneticSolver:StopWorkers()
     end
 end
 
-function GeneticSolver:makeHardFuck(population, populationCount, countOfFucks)
+function GeneticSolver:makeHardFuck(population, populationCount, countOfFucks, treeNodesArray, treeNodesCount)
     local bastards = {}
 
     for fuckNum=1,countOfFucks do
-        local numberOfSlave = math.floor(populationCount * math.random())+1
+        local numberOfSlave = math.random(1, populationCount - 1)
         if numberOfSlave == fuckNum then
             numberOfSlave = numberOfSlave + 1
         end
         local masterDna = population[fuckNum]
         local slaveDna = population[numberOfSlave]
 
-        local bastardDna = masterDna:Selection(slaveDna)
-
-        bastardDna.motherScore = masterDna.fitnessScore
-        bastardDna.fatherScore = slaveDna.fitnessScore
+        local bastardDna = masterDna:SelectionWithCluster(slaveDna, treeNodesArray, treeNodesCount)
 
         bastards[fuckNum] = bastardDna
     end

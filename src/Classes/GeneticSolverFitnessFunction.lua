@@ -15,7 +15,7 @@ function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(dna,
                                                                   targetNormalNodesCount,
                                                                   targetAscendancyNodesCount)
 
-    local usedNormalNodeCount, usedAscendancyNodeCount = dna:ConvertDnaToBuild()
+    local usedNormalNodeCount, usedAscendancyNodeCount = dna:ConvertDnaToBuild(targetNormalNodesCount, targetAscendancyNodesCount)
 
     local csvs = 1
 
@@ -36,12 +36,12 @@ function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(dna,
 
     local stats = env.player.output
 
-    csvs = csvs * CalcCsv(stats.TotalEHP, 1, 66000)
+    csvs = csvs * CalcCsv(stats.TotalEHP, 1, 64600)
     csvs = csvs * CalcCsv(stats.Life, 1, 3000)
     if stats.SpellSuppressionChance then
-        csvs = csvs * CalcCsv(stats.SpellSuppressionChance, 1, 100)
+        csvs = csvs * CalcCsv(stats.SpellSuppressionChance, 1, 90)
     else
-        csvs = csvs * CalcCsv(0, 1, 100)
+        csvs = csvs * CalcCsv(0, 1, 90)
     end
 
     if not stats.LifeLeechGainRate then
@@ -59,6 +59,13 @@ function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(dna,
     end
 
     csvs = csvs * CalcCsv((stats.LightningResist + stats.FireResist + stats.ColdResist) / 3.0, 1, 76)
+
+    if stats.ManaUnreserved then
+        csvs = csvs * CalcCsv(stats.ManaUnreserved, 1, 97)
+    else
+        csvs = csvs * CalcCsv(0, 1, 97)
+    end
+
 
     return csvs * stats.CombinedDPS
 end
