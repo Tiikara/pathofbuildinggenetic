@@ -34,6 +34,10 @@ function GeneticSolver:Solve()
     --dbg.tcpListen('localhost', 9966)
     --dbg.waitIDE()
 
+    local generationsCount = 50000
+    local stopGenerationEps = 100
+    local populationMaxGenerationSize = 5000
+
     local targetNormalNodesCount = 98
     local targetAscendancyNodesCount = 6
 
@@ -45,14 +49,10 @@ function GeneticSolver:Solve()
     self.linda:set("GeneticSolverBuildNum", self.buildNum)
     self.buildNum = self.buildNum + 1
 
-    local generationCount = 200
-
     local population
     local populationCount
 
     population, populationCount = self:GeneratePopulationDistribution()
-
-    local populationMaxGenerationSize = 5000
 
     local dna = new("GeneticSolverDna", self.build)
     dna:GenerateFromCurrentBuild()
@@ -72,8 +72,9 @@ function GeneticSolver:Solve()
     end
 
     local bestDna = population[1]
+    local countGenerationsWithBest = 0
 
-    for _=1, generationCount do
+    for _=1, generationsCount do
 
         local mutatedDnas = {}
 
@@ -128,6 +129,19 @@ function GeneticSolver:Solve()
 
         if population[1].fitnessScore > bestDna.fitnessScore then
             bestDna = population[1]
+            countGenerationsWithBest = 0
+        else
+            countGenerationsWithBest = countGenerationsWithBest + 1
+        end
+
+        if countGenerationsWithBest == stopGenerationEps then
+            for populationNum=1, populationCount do
+                population[populationNum]:Mutate(0.0001)
+            end
+        end
+
+        if countGenerationsWithBest == stopGenerationEps * 2 then
+            break
         end
     end
 
