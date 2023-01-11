@@ -1,10 +1,12 @@
 
-function GeneticSolverWorker(linda)
-    --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x86/?.dll'
-    --local dbg = require('emmy_core')
-    --dbg.tcpListen('localhost', 9966)
-    --dbg.waitIDE()
+local function myerrorhandler( err )
 
+    local file,err_file = io.open("error_thread.txt",'w')
+    file:write(tostring(err))
+    file:close()
+end
+
+local function test()
     -- Initialize PoB VM instance
     arg = { }
 
@@ -12,26 +14,23 @@ function GeneticSolverWorker(linda)
 
     dofile('Classes/GeneticSolverFitnessFunction.lua')
 
-    linda:send("GeneticSolverWorkerInitialized", 1)
+    local path_of_building_genetic_solver = require 'path_of_building_genetic_solver'
 
-    --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
-    --local dbg = require('emmy_core')
-    --dbg.tcpListen('localhost', 9966)
-    --dbg.waitIDE()
+    local targetNormalNodesCount
+    local targetAscendancyNodesCount
 
-    local curBuildNum = 0
+    local treeNodesArray
+    local treeNodesCount
+
+    local dnaProcessNumber = 0
 
     while true do
-        local _, dnaTable = linda:receive("GeneticSolverDnas")
+        local dnaCommand = path_of_building_genetic_solver.WorkerReceiveNextCommand()
 
-        if dnaTable == nil then
-            break
-        end
+        local solverDnaProcessNumber = path_of_building_genetic_solver.WorkerGetDnaProcessNumber()
 
-        local buildNumLinda = linda:get("GeneticSolverBuildNum")
-
-        if buildNumLinda ~= curBuildNum then
-            curBuildNum = buildNumLinda
+        if dnaProcessNumber ~= solverDnaProcessNumber then
+            dnaProcessNumber = solverDnaProcessNumber
 
             build.abortSave = true
 
@@ -42,27 +41,45 @@ function GeneticSolverWorker(linda)
             main:SetMode("BUILD", false, "", xmlText)
             runCallback("OnFrame")
 
+            --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
+            --local dbg = require('emmy_core')
+            --dbg.tcpListen('localhost', 9966)
+            --dbg.waitIDE()
+
+            treeNodesCount = 0
+            treeNodesArray = {}
+
+            for _,treeNode in pairs(build.spec.nodes) do
+                treeNodesCount = treeNodesCount + 1
+                treeNodesArray[treeNodesCount] = treeNode
+            end
+
+            table.sort(treeNodesArray, function(treeNode1, treeNode2) return treeNode1.id > treeNode2.id end)
+
             build.spec:ResetNodes()
             build.spec:BuildAllDependsAndPaths()
+
+            targetNormalNodesCount = 98
+            targetAscendancyNodesCount = 6
         end
 
-        local id = dnaTable.id
-        dnaTable.id = nil
+        if dnaCommand.dnaData then
+            local dna = new("GeneticSolverDna", build)
 
-        local dna = new("GeneticSolverDna", build)
+            dna:FromDnaData(dnaCommand.dnaData, treeNodesArray)
 
-        dna:InitFromTable(dnaTable)
-
-        local res = {
-            fitnessScore = GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(
+            local fitnessScore = GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(
                     dna,
-                    98,
-                    6
-            ),
-            id = id
-        }
+                    targetNormalNodesCount,
+                    targetAscendancyNodesCount
+            )
 
-        linda:send("GeneticSolverDnasFitnessScores", res)
+            path_of_building_genetic_solver.WorkerSetResultDnaFitness(dnaCommand.handler, fitnessScore)
+        end
     end
+end
 
+
+function GeneticSolverWorker(a)
+    xpcall( test, myerrorhandler )
 end
