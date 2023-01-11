@@ -71,7 +71,7 @@ function GeneticSolver:Solve()
         treeNodesArray[treeNodesCount] = treeNode
     end
 
-    local bestDna = population[1]
+    local bestDna = population[1]:Clone()
     local countGenerationsWithBest = 0
 
     for _=1, generationsCount do
@@ -128,7 +128,7 @@ function GeneticSolver:Solve()
         populationCount = zbsPopulationCount
 
         if population[1].fitnessScore > bestDna.fitnessScore then
-            bestDna = population[1]
+            bestDna = population[1]:Clone()
             countGenerationsWithBest = 0
         else
             countGenerationsWithBest = countGenerationsWithBest + 1

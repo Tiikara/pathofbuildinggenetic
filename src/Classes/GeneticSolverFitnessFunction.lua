@@ -67,5 +67,5 @@ function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(dna,
     end
 
 
-    return csvs * stats.CombinedDPS
+    return csvs * stats.CombinedDPS * stats.CombinedDPS
 end
