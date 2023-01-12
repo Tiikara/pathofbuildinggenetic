@@ -36,7 +36,7 @@ function GeneticSolver:Solve()
     --dbg.tcpListen('localhost', 9966)
     --dbg.waitIDE()
 
-    local maxGenerationsCount = 50000
+    local maxGenerationsCount = 10
     local stopGenerationEps = 200
     local countGenerationsMutateEps = 50
     local populationMaxGenerationSize = 5000
@@ -49,28 +49,17 @@ function GeneticSolver:Solve()
     file:write(xmlText)
     file:close()
 
-    local treeNodesArray = {}
-    local treeNodesCount = 0
+    local dnaEncoder = new("GeneticSolverDnaEncoder", self.build)
 
-    for _,treeNode in pairs(self.build.spec.nodes) do
-        treeNodesCount = treeNodesCount + 1
-        treeNodesArray[treeNodesCount] = treeNode
-    end
-
-    -- Make sure that the nodes are sorted to synchronize with the threads
-    table.sort(treeNodesArray, function(treeNode1, treeNode2) return treeNode1.id > treeNode2.id end)
-
-    local resultDnaData = path_of_building_genetic_solver.StartGeneticSolver(
+    local bestDnaData = path_of_building_genetic_solver.StartGeneticSolver(
             maxGenerationsCount,
             stopGenerationEps,
             countGenerationsMutateEps,
             populationMaxGenerationSize,
-            treeNodesCount
+            dnaEncoder.treeNodesCount
     )
 
-    local bestDna = new("GeneticSolverDna", self.build)
-
-    bestDna:FromDnaData(resultDnaData, treeNodesArray)
+    local bestDna = dnaEncoder:CreateDnaFromDnaData(bestDnaData)
 
     self.build.spec:ResetNodes()
     self.build.spec:BuildAllDependsAndPaths()
@@ -79,19 +68,4 @@ function GeneticSolver:Solve()
     self.build.spec:BuildAllDependsAndPaths()
 
     self.build.buildFlag = true
-end
-
-function GeneticSolver:GeneratePopulationDistribution()
-    local dnas = { }
-    local dnaCount = 0
-
-    for _, treeNode in pairs(self.build.spec.nodes) do
-        local dna = new("GeneticSolverDna", self.build)
-        dna.nodesDna[treeNode.id] = 1
-
-        dnaCount = dnaCount + 1
-        dnas[dnaCount] = dna
-    end
-
-    return dnas, dnaCount
 end

@@ -13,14 +13,14 @@ local function test()
     dofile('HeadlessWrapper.lua')
 
     dofile('Classes/GeneticSolverFitnessFunction.lua')
+    dofile('Classes/GeneticSolverDnaEncoder.lua')
 
     local path_of_building_genetic_solver = require 'path_of_building_genetic_solver'
 
     local targetNormalNodesCount
     local targetAscendancyNodesCount
 
-    local treeNodesArray
-    local treeNodesCount
+    local dnaEncoder
 
     local dnaProcessNumber = 0
 
@@ -46,15 +46,7 @@ local function test()
             --dbg.tcpListen('localhost', 9966)
             --dbg.waitIDE()
 
-            treeNodesCount = 0
-            treeNodesArray = {}
-
-            for _,treeNode in pairs(build.spec.nodes) do
-                treeNodesCount = treeNodesCount + 1
-                treeNodesArray[treeNodesCount] = treeNode
-            end
-
-            table.sort(treeNodesArray, function(treeNode1, treeNode2) return treeNode1.id > treeNode2.id end)
+            dnaEncoder = new("GeneticSolverDnaEncoder", build)
 
             build.spec:ResetNodes()
             build.spec:BuildAllDependsAndPaths()
@@ -64,9 +56,7 @@ local function test()
         end
 
         if dnaCommand.dnaData then
-            local dna = new("GeneticSolverDna", build)
-
-            dna:FromDnaData(dnaCommand.dnaData, treeNodesArray)
+            local dna = dnaEncoder:CreateDnaFromDnaData(dnaCommand.dnaData)
 
             local fitnessScore = GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(
                     dna,

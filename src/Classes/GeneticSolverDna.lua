@@ -23,6 +23,10 @@ function GeneticSolverDna:GenerateFromCurrentBuild()
     end
 end
 
+-- Ensure you run
+--    self.build.spec:ResetNodes()
+--    self.build.spec:BuildAllDependsAndPaths()
+-- before run this method
 function GeneticSolverDna:ConvertDnaToBuild(targetNormalNodesCount, targetAscendancyNodesCount)
     local countNormalNodesToAllocate = 0
     local countAscendancyNodesToAllocate = 0
