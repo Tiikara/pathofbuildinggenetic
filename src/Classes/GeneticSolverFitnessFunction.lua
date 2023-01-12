@@ -36,12 +36,12 @@ function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(dna,
 
     local stats = env.player.output
 
-    csvs = csvs * CalcCsv(stats.TotalEHP, 1, 64600)
-    csvs = csvs * CalcCsv(stats.Life, 1, 3000)
+    csvs = csvs * CalcCsv(stats.TotalEHP, 1, 79400)
+    csvs = csvs * CalcCsv(stats.Life, 1, 3600)
     if stats.SpellSuppressionChance then
-        csvs = csvs * CalcCsv(stats.SpellSuppressionChance, 1, 90)
+        csvs = csvs * CalcCsv(stats.SpellSuppressionChance, 1, 100)
     else
-        csvs = csvs * CalcCsv(0, 1, 90)
+        csvs = csvs * CalcCsv(0, 1, 100)
     end
 
     if not stats.LifeLeechGainRate then
@@ -53,9 +53,9 @@ function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(dna,
     end
 
     if stats.LifeLeechGainRate + stats.LifeRegenRecovery ~= 0 then
-        csvs = csvs * CalcCsv((stats.LifeLeechGainRate + stats.LifeRegenRecovery) / stats.Life, 1, 0.5)
+        csvs = csvs * CalcCsv(stats.LifeLeechGainRate + stats.LifeRegenRecovery, 1, 1892)
     else
-        csvs = csvs * CalcCsv(0, 1, 0.5)
+        csvs = csvs * CalcCsv(0, 1, 1892)
     end
 
     csvs = csvs * CalcCsv((stats.LightningResist + stats.FireResist + stats.ColdResist) / 3.0, 1, 76)
@@ -66,6 +66,13 @@ function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(dna,
         csvs = csvs * CalcCsv(0, 1, 97)
     end
 
+    if not stats.ManaLeechGainRate then
+        stats.ManaLeechGainRate = 0
+    end
+
+    csvs = csvs * CalcCsv(stats.ManaLeechGainRate, 1, 100)
+    csvs = csvs * CalcCsv(stats.PhysicalMaximumHitTaken, 1, 11600)
+    csvs = csvs * CalcCsv(stats.LightningMaximumHitTaken, 1, 25000)
 
     return csvs * stats.CombinedDPS * stats.CombinedDPS
 end

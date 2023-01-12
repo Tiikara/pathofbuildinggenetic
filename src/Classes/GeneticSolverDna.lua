@@ -3,15 +3,8 @@ math.randomseed(os.clock())
 local GeneticSolverDna = newClass("GeneticSolverDna", function(self, build)
     self.build = build
     self.nodesDna = { }
+    self.masteriesDna = { }
 end)
-
-function GeneticSolverDna:FromDnaData(dnaData, treeNodesArray)
-    for index,_ in pairs(dnaData.treeNodesIndexes) do
-        local treeNode = treeNodesArray[index]
-
-        self.nodesDna[treeNode.id] = 1
-    end
-end
 
 function GeneticSolverDna:GenerateFromCurrentBuild()
     for _, treeNode in pairs(self.build.spec.nodes) do
@@ -39,7 +32,7 @@ function GeneticSolverDna:ConvertDnaToBuild(targetNormalNodesCount, targetAscend
 
         local node = self.build.spec.nodes[nodeId]
 
-        if node.type ~= "Mastery" and node.path and node.type ~= "ClassStart" and node.type ~= "AscendClassStart" then
+        if node.path and node.type ~= "ClassStart" and node.type ~= "AscendClassStart" then
             if node.ascendancyName then
                 countAscendancyNodesToAllocate = countAscendancyNodesToAllocate + 1
                 ascendancyNodesToAllocate[countAscendancyNodesToAllocate] = node
@@ -62,12 +55,12 @@ function GeneticSolverDna:ConvertDnaToBuild(targetNormalNodesCount, targetAscend
     end)
 
     local normalNodesSelected = 0
+    self.masteryNodesSelectedEffectsNum = { }
     for _, node in pairs(normalNodesToAllocate) do
         if not node.alloc then
             for _, nodeLinked in pairs(node.linked) do
                 if nodeLinked.alloc then
-                    node.alloc = true
-                    self.build.spec.allocNodes[node.id] = node
+                    self:AllocNode(node)
 
                     normalNodesSelected = normalNodesSelected + 1
                     break
@@ -77,8 +70,7 @@ function GeneticSolverDna:ConvertDnaToBuild(targetNormalNodesCount, targetAscend
             if not node.alloc then
                 for _, pathNode in ipairs(node.path) do
                     if not pathNode.alloc then
-                        pathNode.alloc = true
-                        self.build.spec.allocNodes[pathNode.id] = pathNode
+                        self:AllocNode(pathNode)
 
                         normalNodesSelected = normalNodesSelected + 1
 
@@ -142,3 +134,31 @@ function GeneticSolverDna:ConvertDnaToBuild(targetNormalNodesCount, targetAscend
     return normalNodesSelected, ascendancyNodesSelected
 end
 
+function GeneticSolverDna:AllocNode(node)
+    if node.type == "Mastery" then
+        self:TryAllocMastery(node)
+    else
+        node.alloc = true
+        self.build.spec.allocNodes[node.id] = node
+    end
+end
+
+function GeneticSolverDna:TryAllocMastery(node)
+    local effects = self.masteriesDna[node.id]
+
+    if effects then
+        if not self.masteryNodesSelectedEffectsNum[node.id] then
+            self.masteryNodesSelectedEffectsNum[node.id] = 1
+        else
+            self.masteryNodesSelectedEffectsNum[node.id] = self.masteryNodesSelectedEffectsNum[node.id] + 1
+        end
+
+        local effect = effects[self.masteryNodesSelectedEffectsNum[node.id]]
+
+        if effect then
+            node.alloc = true
+            self.build.spec.allocNodes[node.id] = node
+            self.build.spec.masterySelections[node.id] = effect
+        end
+    end
+end

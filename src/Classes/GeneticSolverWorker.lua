@@ -41,17 +41,12 @@ local function test()
             main:SetMode("BUILD", false, "", xmlText)
             runCallback("OnFrame")
 
-            --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
-            --local dbg = require('emmy_core')
-            --dbg.tcpListen('localhost', 9966)
-            --dbg.waitIDE()
-
             dnaEncoder = new("GeneticSolverDnaEncoder", build)
 
             build.spec:ResetNodes()
             build.spec:BuildAllDependsAndPaths()
 
-            targetNormalNodesCount = 98
+            targetNormalNodesCount = 107
             targetAscendancyNodesCount = 6
         end
 

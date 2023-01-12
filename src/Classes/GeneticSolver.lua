@@ -18,7 +18,7 @@ local GeneticSolver = newClass("GeneticSolver", function(self, build)
     path_of_building_genetic_solver.InitGeneticSolver()
 
     self.fitnessWorkers = { }
-    for i=1,22 do
+    for i=1,15 do
         self.fitnessWorkers[i] = lanes.gen("*", GeneticSolverWorker)()
 
         --self.linda:receive("GeneticSolverWorkerInitialized")
@@ -36,12 +36,12 @@ function GeneticSolver:Solve()
     --dbg.tcpListen('localhost', 9966)
     --dbg.waitIDE()
 
-    local maxGenerationsCount = 10
-    local stopGenerationEps = 200
+    local maxGenerationsCount = 10000
+    local stopGenerationEps = 300
     local countGenerationsMutateEps = 50
     local populationMaxGenerationSize = 5000
 
-    local targetNormalNodesCount = 98
+    local targetNormalNodesCount = 107
     local targetAscendancyNodesCount = 6
 
     local xmlText = self.build:SaveDB("genetic_build.xml")
@@ -56,8 +56,14 @@ function GeneticSolver:Solve()
             stopGenerationEps,
             countGenerationsMutateEps,
             populationMaxGenerationSize,
-            dnaEncoder.treeNodesCount
+            dnaEncoder.treeNodesCount,
+            dnaEncoder.mysteriesNodesCount
     )
+
+    --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
+    --local dbg = require('emmy_core')
+    --dbg.tcpListen('localhost', 9966)
+    --dbg.waitIDE()
 
     local bestDna = dnaEncoder:CreateDnaFromDnaData(bestDnaData)
 
