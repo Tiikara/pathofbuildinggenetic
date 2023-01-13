@@ -29,7 +29,7 @@ function GeneticSolver:StartSolve()
 
     local maxGenerationsCount = 5000
     local stopGenerationEps = 100
-    local countGenerationsMutateEps = 5
+    local countGenerationsMutateEps = 20
     local populationMaxGenerationSize = 5000
 
     self.targetNormalNodesCount = 107

@@ -19,6 +19,8 @@ end
 --    self.build.spec:BuildAllDependsAndPaths()
 -- before run this method
 function GeneticSolverDna:ConvertDnaToBuild(targetNormalNodesCount, targetAscendancyNodesCount)
+    self:ResetNodes()
+
     local countNormalNodesToAllocate = 0
     local countAscendancyNodesToAllocate = 0
     local normalNodesToAllocate = {}
@@ -41,8 +43,6 @@ function GeneticSolverDna:ConvertDnaToBuild(targetNormalNodesCount, targetAscend
 
         end
     end
-
-    self.build.spec:ResetNodes()
 
     table.sort(normalNodesToAllocate, function(node1, node2)
         return node1.pathDist < node2.pathDist
@@ -132,6 +132,10 @@ function GeneticSolverDna:ConvertDnaToBuild(targetNormalNodesCount, targetAscend
     return normalNodesSelected, ascendancyNodesSelected
 end
 
+function GeneticSolverDna:ResetNodes()
+    self.build.spec:ResetNodes()
+end
+
 function GeneticSolverDna:AllocNode(node)
     if node.type == "Mastery" then
         self:TryAllocMastery(node)
@@ -156,7 +160,12 @@ function GeneticSolverDna:TryAllocMastery(node)
         if effect then
             node.alloc = true
             self.build.spec.allocNodes[node.id] = node
-            self.build.spec.masterySelections[node.id] = effect
+            self.build.spec.masterySelections[node.id] = effect.effect
+
+            node.sd = effect.sd
+            node.allMasteryOptions = false
+            node.reminderText = { "Tip: Right click to select a different effect" }
+            self.build.spec.tree:ProcessStats(node)
         end
     end
 end

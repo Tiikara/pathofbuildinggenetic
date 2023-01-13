@@ -61,7 +61,7 @@ function GeneticSolverDnaEncoder:CreateDnaFromDnaData(dnaData)
             end
 
             effectsCount = effectsCount + 1
-            effects[effectsCount] = effectInfo.effect.effect
+            effects[effectsCount] = effectInfo.effect
         end
 
         dna.masteriesDna[masteryNodeInfo.node.id] = effects
