@@ -37,4 +37,5 @@ src/Data/TimelessJewelData/*.bin
 # Genetic Resolver
 src/genetic_build.xml
 src/error_thread.txt
+*/rust_panic.txt
 runtime_x64/path_of_building_genetic_solver.dll
