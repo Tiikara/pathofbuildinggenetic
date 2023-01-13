@@ -1,13 +1,8 @@
 
-dofile('Classes/GeneticSolverWorker.lua')
-
 local lanesIsInitialized = false
-
-local path_of_building_genetic_solver = require 'path_of_building_genetic_solver'
 
 local GeneticSolver = newClass("GeneticSolver", function(self, build)
     self.build = build
-    self.buildNum = 1
 
     if not lanesIsInitialized then
         lanes = require "lanes"
@@ -15,62 +10,68 @@ local GeneticSolver = newClass("GeneticSolver", function(self, build)
         lanesIsInitialized = true
     end
 
-    path_of_building_genetic_solver.InitGeneticSolver()
+    local path_of_building_genetic_solver = require 'path_of_building_genetic_solver'
 
-    self.fitnessWorkers = { }
-    for i=1,15 do
-        self.fitnessWorkers[i] = lanes.gen("*", GeneticSolverWorker)()
+    self.backendGeneticSolver = path_of_building_genetic_solver.CreateGeneticSolver()
 
-        --self.linda:receive("GeneticSolverWorkerInitialized")
-    end
-
-    --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x86/?.dll'
-    --local dbg = require('emmy_core')
-    --dbg.tcpListen('localhost', 9966)
-    --dbg.waitIDE()
+    self.backendGeneticSolver:CreateWorkers(22)
 end)
 
-function GeneticSolver:Solve()
+function GeneticSolver:StartSolve()
     --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
     --local dbg = require('emmy_core')
     --dbg.tcpListen('localhost', 9966)
     --dbg.waitIDE()
 
-    local maxGenerationsCount = 10000
-    local stopGenerationEps = 300
-    local countGenerationsMutateEps = 50
+    if self.backendGeneticSolver:IsProgress() then
+        error("Cannot start process. Already started")
+    end
+
+    local maxGenerationsCount = 5000
+    local stopGenerationEps = 100
+    local countGenerationsMutateEps = 5
     local populationMaxGenerationSize = 5000
 
-    local targetNormalNodesCount = 107
-    local targetAscendancyNodesCount = 6
+    self.targetNormalNodesCount = 107
+    self.targetAscendancyNodesCount = 6
 
     local xmlText = self.build:SaveDB("genetic_build.xml")
     local file = io.open("genetic_build.xml", "w+")
     file:write(xmlText)
     file:close()
 
-    local dnaEncoder = new("GeneticSolverDnaEncoder", self.build)
+    self.dnaEncoder = new("GeneticSolverDnaEncoder", self.build)
 
-    local bestDnaData = path_of_building_genetic_solver.StartGeneticSolver(
+    self.backendGeneticSolver:StartSolve(
             maxGenerationsCount,
             stopGenerationEps,
             countGenerationsMutateEps,
             populationMaxGenerationSize,
-            dnaEncoder.treeNodesCount,
-            dnaEncoder.mysteriesNodesCount
+            self.dnaEncoder.treeNodesCount,
+            self.dnaEncoder.mysteriesNodesCount,
+            self.targetNormalNodesCount,
+            self.targetAscendancyNodesCount
     )
+end
 
-    --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
-    --local dbg = require('emmy_core')
-    --dbg.tcpListen('localhost', 9966)
-    --dbg.waitIDE()
+function GeneticSolver:GetBestDnaNumber()
+    return self.backendGeneticSolver:GetBestDnaNumber()
+end
 
-    local bestDna = dnaEncoder:CreateDnaFromDnaData(bestDnaData)
+function GeneticSolver:IsProgress()
+    return self.backendGeneticSolver:IsProgress()
+end
+
+
+function GeneticSolver:GenerateBuildFromCurrentBestResult()
+    local bestDnaData = self.backendGeneticSolver:GetBestDnaData()
+
+    local bestDna = self.dnaEncoder:CreateDnaFromDnaData(bestDnaData)
 
     self.build.spec:ResetNodes()
     self.build.spec:BuildAllDependsAndPaths()
 
-    bestDna:ConvertDnaToBuild(targetNormalNodesCount, targetAscendancyNodesCount)
+    bestDna:ConvertDnaToBuild(self.targetNormalNodesCount, self.targetAscendancyNodesCount)
     self.build.spec:BuildAllDependsAndPaths()
 
     self.build.buildFlag = true

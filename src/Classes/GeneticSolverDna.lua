@@ -1,5 +1,3 @@
-math.randomseed(os.clock())
-
 local GeneticSolverDna = newClass("GeneticSolverDna", function(self, build)
     self.build = build
     self.nodesDna = { }

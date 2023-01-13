@@ -17,6 +17,8 @@ local s_gsub = string.gsub
 local s_byte = string.byte
 local dkjson = require "dkjson"
 
+geneticSolver = nil
+
 local TreeTabClass = newClass("TreeTab", "ControlHost", function(self, build)
 	self.ControlHost()
 
@@ -105,15 +107,13 @@ local TreeTabClass = newClass("TreeTab", "ControlHost", function(self, build)
 	self.controls.compareSelect.enableDroppedWidth = true
 	self.controls.compareSelect.enableChangeBoxWidth = true
 
-	local geneticSolver = nil
-
 	self.controls.reset = new("ButtonControl", { "LEFT", self.controls.compareCheck, "RIGHT" }, 8, 0, 60, 20, "Reset", function()
 
 		if geneticSolver == nil then
 			geneticSolver = new("GeneticSolver", self.build)
 		end
 
-		geneticSolver:Solve()
+		geneticSolver:StartSolve()
 
 		--[[main:OpenConfirmPopup("Reset Tree", "Are you sure you want to reset your passive tree?", "Reset", function()
 			self.build.spec:ResetNodes()

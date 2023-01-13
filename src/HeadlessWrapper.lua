@@ -114,6 +114,12 @@ function LoadModule(fileName, ...)
 	if not fileName:match("%.lua") then
 		fileName = fileName .. ".lua"
 	end
+
+	-- We need this variable for multithreaded Genetic Solver. Cause working dir always changes....
+	if ScriptAbsoluteWorkingDir then
+		fileName = ScriptAbsoluteWorkingDir .. fileName
+	end
+
 	local func, err = loadfile(fileName)
 	if func then
 		return func(...)
@@ -125,6 +131,12 @@ function PLoadModule(fileName, ...)
 	if not fileName:match("%.lua") then
 		fileName = fileName .. ".lua"
 	end
+
+	-- We need this variable for multithreaded Genetic Solver. Cause working dir always changes....
+	if ScriptAbsoluteWorkingDir then
+		fileName = ScriptAbsoluteWorkingDir .. fileName
+	end
+
 	local func, err = loadfile(fileName)
 	if func then
 		return PCall(func, ...)
@@ -163,8 +175,13 @@ function require(name)
 	return l_require(name)
 end
 
+local launchPath = "Launch.lua"
 
-dofile("Launch.lua")
+if ScriptAbsoluteWorkingDir then
+	launchPath = ScriptAbsoluteWorkingDir .. launchPath
+end
+
+dofile(launchPath)
 
 -- Prevents loading of ModCache
 -- Allows running mod parsing related tests without pushing ModCache

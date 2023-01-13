@@ -145,7 +145,7 @@ function main:Init()
 			ConPrintf("Rare DB unrecognised item:\n%s", raw)
 		end
 	end
-	
+
 	if self.saveNewModCache then
 		self:SaveModCache()
 	end
@@ -272,6 +272,21 @@ end
 
 function main:OnFrame()
 	self.screenW, self.screenH = GetScreenSize()
+
+	if geneticSolver then
+		--package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
+		--local dbg = require('emmy_core')
+		--dbg.tcpListen('localhost', 9966)
+		--dbg.waitIDE()
+
+		local currentBestDnaNumber = geneticSolver:GetBestDnaNumber()
+		if currentBestDnaNumber ~= 0 then
+			if geneticSolverBestDnaNumber == nil or geneticSolverBestDnaNumber ~= currentBestDnaNumber then
+				geneticSolverBestDnaNumber = currentBestDnaNumber
+				geneticSolver:GenerateBuildFromCurrentBestResult()
+			end
+		end
+	end
 
 	if self.screenH > self.screenW then
 		self.portraitMode = true
@@ -775,7 +790,7 @@ function main:OpenOptionsPopup()
 		self.slotOnlyTooltips = state
 	end)
 	controls.slotOnlyTooltips.state = self.slotOnlyTooltips
-	
+
 	nextRow()
 	controls.invertSliderScrollDirection = new("CheckBoxControl", { "TOPLEFT", nil, "TOPLEFT" }, defaultLabelPlacementX, currentY, 20, "^7Invert slider scroll direction:", function(state)
 		self.invertSliderScrollDirection = state

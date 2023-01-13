@@ -1,36 +1,25 @@
-
-local function myerrorhandler( err )
-
-    local file,err_file = io.open("error_thread.txt",'w')
-    file:write(tostring(err))
-    file:close()
-end
-
-local function test()
+function GeneticSolverWorker()
     -- Initialize PoB VM instance
     arg = { }
 
-    dofile('HeadlessWrapper.lua')
+    dofile(ScriptAbsoluteWorkingDir .. 'HeadlessWrapper.lua')
 
-    dofile('Classes/GeneticSolverFitnessFunction.lua')
-    dofile('Classes/GeneticSolverDnaEncoder.lua')
-
-    local path_of_building_genetic_solver = require 'path_of_building_genetic_solver'
-
-    local targetNormalNodesCount
-    local targetAscendancyNodesCount
+    LoadModule('Classes/GeneticSolverFitnessFunction.lua')
+    LoadModule('Classes/GeneticSolverDnaEncoder.lua')
+    LoadModule('Classes/GeneticSolverDna.lua')
 
     local dnaEncoder
+    local sessionParameters
 
-    local dnaProcessNumber = 0
+    local sessionNumber = 0
 
     while true do
-        local dnaCommand = path_of_building_genetic_solver.WorkerReceiveNextCommand()
+        local dnaCommand = GeneticWorkerReceiveNextCommand()
 
-        local solverDnaProcessNumber = path_of_building_genetic_solver.WorkerGetDnaProcessNumber()
+        local currentSessionNumber = GeneticWorkerGetSessionNumber()
 
-        if dnaProcessNumber ~= solverDnaProcessNumber then
-            dnaProcessNumber = solverDnaProcessNumber
+        if sessionNumber ~= currentSessionNumber then
+            sessionNumber = currentSessionNumber
 
             build.abortSave = true
 
@@ -46,8 +35,7 @@ local function test()
             build.spec:ResetNodes()
             build.spec:BuildAllDependsAndPaths()
 
-            targetNormalNodesCount = 107
-            targetAscendancyNodesCount = 6
+            sessionParameters = GeneticWorkerGetSessionParameters()
         end
 
         if dnaCommand.dnaData then
@@ -55,16 +43,11 @@ local function test()
 
             local fitnessScore = GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(
                     dna,
-                    targetNormalNodesCount,
-                    targetAscendancyNodesCount
+                    sessionParameters.targetNormalNodesCount,
+                    sessionParameters.targetAscendancyNodesCount
             )
 
-            path_of_building_genetic_solver.WorkerSetResultDnaFitness(dnaCommand.handler, fitnessScore)
+            GeneticWorkerSetResultToHandler(dnaCommand.handler, fitnessScore)
         end
     end
-end
-
-
-function GeneticSolverWorker(a)
-    xpcall( test, myerrorhandler )
 end
