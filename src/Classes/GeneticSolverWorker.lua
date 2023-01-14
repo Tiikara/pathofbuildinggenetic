@@ -30,19 +30,17 @@ function GeneticSolverWorker()
             main:SetMode("BUILD", false, "", xmlText)
             runCallback("OnFrame")
 
-            dnaEncoder = new("GeneticSolverDnaEncoder", build)
-
-            build.spec:ResetNodes()
-            build.spec:BuildAllDependsAndPaths()
+            dnaEncoder = CreateDnaEncoder(build)
 
             sessionParameters = GeneticWorkerGetSessionParameters()
         end
 
-        if dnaCommand.dnaData then
-            local dna = dnaEncoder:CreateDnaFromDnaData(dnaCommand.dnaData)
+        if dnaCommand.handler then
+            local dnaConvertResult = dnaEncoder:ConvertDnaCommandHandlerToBuild(build, dnaCommand.handler);
 
             local fitnessScore = GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(
-                    dna,
+                    build,
+                    dnaConvertResult,
                     sessionParameters.targetNormalNodesCount,
                     sessionParameters.targetAscendancyNodesCount
             )

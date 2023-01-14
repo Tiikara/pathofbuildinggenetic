@@ -40,15 +40,17 @@ function GeneticSolver:StartSolve()
     file:write(xmlText)
     file:close()
 
-    self.dnaEncoder = new("GeneticSolverDnaEncoder", self.build)
+    local path_of_building_genetic_solver = require 'path_of_building_genetic_solver'
+
+    self.dnaEncoder = path_of_building_genetic_solver.CreateDnaEncoder(self.build)
 
     self.backendGeneticSolver:StartSolve(
             maxGenerationsCount,
             stopGenerationEps,
             countGenerationsMutateEps,
             populationMaxGenerationSize,
-            self.dnaEncoder.treeNodesCount,
-            self.dnaEncoder.mysteriesNodesCount,
+            self.dnaEncoder:GetTreeNodesCount(),
+            2,
             self.targetNormalNodesCount,
             self.targetAscendancyNodesCount
     )
@@ -64,15 +66,11 @@ end
 
 
 function GeneticSolver:GenerateBuildFromCurrentBestResult()
-    local bestDnaData = self.backendGeneticSolver:GetBestDnaData()
+    local bestDna = self.backendGeneticSolver:GetBestDna()
 
-    local bestDna = self.dnaEncoder:CreateDnaFromDnaData(bestDnaData)
+    self.dnaEncoder:ConvertDnaToBuild(self.build, bestDna);
 
-    self.build.spec:ResetNodes()
-    self.build.spec:BuildAllDependsAndPaths()
-
-    bestDna:ConvertDnaToBuild(self.targetNormalNodesCount, self.targetAscendancyNodesCount)
-    self.build.spec:BuildAllDependsAndPaths()
+    self.build.spec:BuildAllDependsAndPaths();
 
     self.build.buildFlag = true
 end

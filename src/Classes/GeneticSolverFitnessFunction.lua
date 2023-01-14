@@ -11,13 +11,14 @@ local function CalcCsv(x, weight, target)
     return math.exp(weight * csvWeightMultiplier * x / target) / math.exp(weight * csvWeightMultiplier);
 end
 
-function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(dna,
+function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(build,
+                                                                  dnaConvertResult,
                                                                   targetNormalNodesCount,
                                                                   targetAscendancyNodesCount)
-
-    local usedNormalNodeCount, usedAscendancyNodeCount = dna:ConvertDnaToBuild(targetNormalNodesCount, targetAscendancyNodesCount)
-
     local csvs = 1
+
+    local usedNormalNodeCount = dnaConvertResult.usedNormalNodeCount
+    local usedAscendancyNodeCount = dnaConvertResult.usedAscendancyNodeCount
 
     if usedNormalNodeCount > targetNormalNodesCount then
         csvs = csvs * CalcCsv(2 * targetNormalNodesCount - usedNormalNodeCount, usedNodeCountWeight, targetNormalNodesCount)
@@ -31,7 +32,7 @@ function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(dna,
         csvs = csvs * 1 + usedNodeCountFactor * math.log(targetAscendancyNodesCount + 1 - usedAscendancyNodeCount);
     end
 
-    local env, cachedPlayerDB, cachedEnemyDB, cachedMinionDB = calcs.initEnv(dna.build, "MAIN")
+    local env, cachedPlayerDB, cachedEnemyDB, cachedMinionDB = calcs.initEnv(build, "MAIN")
     calcs.perform(env)
 
     local stats = env.player.output
