@@ -44,48 +44,66 @@ function GeneticSolverDna:ConvertDnaToBuild(targetNormalNodesCount, targetAscend
         end
     end
 
-    table.sort(normalNodesToAllocate, function(node1, node2)
-        return node1.pathDist < node2.pathDist
-    end)
-
     table.sort(ascendancyNodesToAllocate, function(node1, node2)
         return node1.pathDist < node2.pathDist
     end)
 
     local normalNodesSelected = 0
     self.masteryNodesSelectedEffectsNum = { }
-    for _, node in pairs(normalNodesToAllocate) do
-        if not node.alloc then
-            for _, nodeLinked in pairs(node.linked) do
-                if nodeLinked.alloc then
-                    self:AllocNode(node)
 
-                    normalNodesSelected = normalNodesSelected + 1
-                    break
-                end
+    for _,node in pairs(self.build.spec.nodes) do
+        if not node.ascendancyName then
+            node.pathDist = (node.alloc and not node.dependsOnIntuitiveLeapLike) and 0 or 1000
+            node.path = nil
+            if node.isJewelSocket or node.expansionJewel then
+                node.distanceToClassStart = 0
             end
+        end
+    end
 
-            if not node.alloc then
-                for _, pathNode in ipairs(node.path) do
-                    if not pathNode.alloc then
-                        self:AllocNode(pathNode)
+    for _, node in pairs(self.build.spec.allocNodes) do
+        if not node.dependsOnIntuitiveLeapLike then
+            self.build.spec:BuildPathFromNode(node)
+            if node.isJewelSocket or node.expansionJewel then
+                self.build.spec:SetNodeDistanceToClassStart(node)
+            end
+        end
+    end
 
-                        normalNodesSelected = normalNodesSelected + 1
-
-                        if normalNodesSelected == targetNormalNodesCount then
-                            break
-                        end
-                    end
-                end
-
-                if normalNodesSelected == targetNormalNodesCount then
-                    break
-                end
+    while countNormalNodesToAllocate > 0 do
+        local smallestNode
+        local smallestNodeNum
+        for number, node in pairs(normalNodesToAllocate) do
+            if node.alloc then
+                normalNodesToAllocate[number] = nil
+                countNormalNodesToAllocate = countNormalNodesToAllocate - 1
             else
-                if normalNodesSelected == targetNormalNodesCount then
-                    break
+                if smallestNode == nil or smallestNode.pathDist > node.pathDist then
+                    smallestNode = node
+                    smallestNodeNum = number
                 end
             end
+        end
+
+        if smallestNode == nil then
+            break
+        end
+
+        countNormalNodesToAllocate = countNormalNodesToAllocate - 1
+        normalNodesToAllocate[smallestNodeNum] = nil
+
+        for _, pathNode in ipairs(smallestNode.path) do
+            self:AllocNode(pathNode)
+
+            normalNodesSelected = normalNodesSelected + 1
+
+            if normalNodesSelected == targetNormalNodesCount then
+                break
+            end
+        end
+
+        if normalNodesSelected == targetNormalNodesCount then
+            break
         end
     end
 
@@ -142,6 +160,8 @@ function GeneticSolverDna:AllocNode(node)
     else
         node.alloc = true
         self.build.spec.allocNodes[node.id] = node
+
+        self.build.spec:BuildPathFromNode(node)
     end
 end
 
@@ -166,6 +186,8 @@ function GeneticSolverDna:TryAllocMastery(node)
             node.allMasteryOptions = false
             node.reminderText = { "Tip: Right click to select a different effect" }
             self.build.spec.tree:ProcessStats(node)
+
+            self.build.spec:BuildPathFromNode(node)
         end
     end
 end
