@@ -5,8 +5,6 @@ function GeneticSolverWorker()
     dofile(ScriptAbsoluteWorkingDir .. 'HeadlessWrapper.lua')
 
     LoadModule('Classes/GeneticSolverFitnessFunction.lua')
-    LoadModule('Classes/GeneticSolverDnaEncoder.lua')
-    LoadModule('Classes/GeneticSolverDna.lua')
 
     local dnaEncoder
     local sessionParameters
@@ -30,7 +28,7 @@ function GeneticSolverWorker()
             main:SetMode("BUILD", false, "", xmlText)
             runCallback("OnFrame")
 
-            dnaEncoder = CreateDnaEncoder(build)
+            dnaEncoder = GeneticWorkerCreateDnaEncoder(build)
 
             sessionParameters = GeneticWorkerGetSessionParameters()
         end
