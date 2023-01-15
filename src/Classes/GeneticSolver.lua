@@ -33,7 +33,7 @@ function GeneticSolver:StartSolve()
     local populationMaxGenerationSize = 5000
 
     self.targetNormalNodesCount = 107
-    self.targetAscendancyNodesCount = 6
+    self.targetAscendancyNodesCount = 8
 
     local xmlText = self.build:SaveDB("genetic_build.xml")
     local file = io.open("genetic_build.xml", "w+")
@@ -50,7 +50,7 @@ function GeneticSolver:StartSolve()
             countGenerationsMutateEps,
             populationMaxGenerationSize,
             self.dnaEncoder:GetTreeNodesCount(),
-            2,
+            self.dnaEncoder:GetMasteryNodesCount(),
             self.targetNormalNodesCount,
             self.targetAscendancyNodesCount
     )
@@ -68,7 +68,7 @@ end
 function GeneticSolver:GenerateBuildFromCurrentBestResult()
     local bestDna = self.backendGeneticSolver:GetBestDna()
 
-    self.dnaEncoder:ConvertDnaToBuild(self.build, bestDna);
+    self.dnaEncoder:ConvertDnaToBuild(self.build, bestDna, self.targetNormalNodesCount, self.targetAscendancyNodesCount);
 
     self.build.spec:BuildAllDependsAndPaths();
 

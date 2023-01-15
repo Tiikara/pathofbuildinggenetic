@@ -36,7 +36,11 @@ function GeneticSolverWorker()
         end
 
         if dnaCommand.handler then
-            local dnaConvertResult = dnaEncoder:ConvertDnaCommandHandlerToBuild(build, dnaCommand.handler);
+            local dnaConvertResult = dnaEncoder:ConvertDnaCommandHandlerToBuild(build,
+                    dnaCommand.handler,
+                    sessionParameters.targetNormalNodesCount,
+                    sessionParameters.targetAscendancyNodesCount
+            );
 
             local fitnessScore = GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(
                     build,

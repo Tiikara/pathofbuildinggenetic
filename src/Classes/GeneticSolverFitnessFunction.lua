@@ -40,9 +40,9 @@ function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(build,
     csvs = csvs * CalcCsv(stats.TotalEHP, 1, 79400)
     csvs = csvs * CalcCsv(stats.Life, 1, 3600)
     if stats.SpellSuppressionChance then
-        csvs = csvs * CalcCsv(stats.SpellSuppressionChance, 1, 100)
+        csvs = csvs * CalcCsv(stats.SpellSuppressionChance, 10, 100)
     else
-        csvs = csvs * CalcCsv(0, 1, 100)
+        csvs = csvs * CalcCsv(0, 10, 100)
     end
 
     if not stats.LifeLeechGainRate then
