@@ -1,14 +1,6 @@
 
-local lanesIsInitialized = false
-
 local GeneticSolver = newClass("GeneticSolver", function(self, build)
     self.build = build
-
-    if not lanesIsInitialized then
-        lanes = require "lanes"
-        lanes.configure()
-        lanesIsInitialized = true
-    end
 
     local path_of_building_genetic_solver = require 'path_of_building_genetic_solver'
 
@@ -50,7 +42,7 @@ function GeneticSolver:StartSolve()
             countGenerationsMutateEps,
             populationMaxGenerationSize,
             self.dnaEncoder:GetTreeNodesCount(),
-            self.dnaEncoder:GetMasteryNodesCount(),
+            self.dnaEncoder:GetMasteryCount(),
             self.targetNormalNodesCount,
             self.targetAscendancyNodesCount
     )
