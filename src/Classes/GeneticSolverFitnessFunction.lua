@@ -4,17 +4,40 @@ local usedNodeCountWeight = 5
 local usedNodeCountFactor = .0005
 local csvWeightMultiplier = 10
 
-GeneticSolverFitnessFunction = { }
-
 local function CalcCsv(x, weight, target)
     x = math.min(x, target);
     return math.exp(weight * csvWeightMultiplier * x / target) / math.exp(weight * csvWeightMultiplier);
 end
 
-function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(build,
-                                                                  dnaConvertResult,
+local GeneticSolverFitnessFunction = newClass("GeneticSolverFitnessFunction", function(self, build)
+    self.build = build
+
+    local mapDisplayStatsPlayer = {}
+    for _, stat in build.displayStats do
+        if stat.stat then
+            mapDisplayStatsPlayer[stat.stat] = stat
+        end
+    end
+
+    local mapDisplayStatsMinion = {}
+    for _, stat in build.minionDisplayStats do
+        if stat.stat then
+            mapDisplayStatsMinion[stat.stat] = stat
+        end
+    end
+
+    self.mapDisplayStatsByActor = {
+        player = mapDisplayStatsPlayer,
+        minion = mapDisplayStatsMinion
+    }
+end)
+
+function GeneticSolverFitnessFunction:CalculateAndGetFitnessScore(dnaConvertResult,
                                                                   targetNormalNodesCount,
-                                                                  targetAscendancyNodesCount)
+                                                                  targetAscendancyNodesCount,
+                                                                  targetStats,
+                                                                  maximizeStats
+)
     local csvs = 1
 
     local usedNormalNodeCount = dnaConvertResult.usedNormalNodeCount
@@ -32,48 +55,32 @@ function GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(build,
         csvs = csvs * 1 + usedNodeCountFactor * math.log(targetAscendancyNodesCount + 1 - usedAscendancyNodeCount);
     end
 
-    local env, cachedPlayerDB, cachedEnemyDB, cachedMinionDB = calcs.initEnv(build, "MAIN")
+    local env, _, _, _ = calcs.initEnv(self.build, "MAIN")
     calcs.perform(env)
 
-    local stats = env.player.output
+    for _, targetStat in targetStats do
+        local statData = self.mapDisplayStatsByActor[targetStat.actor][targetStat.stat]
 
-    csvs = csvs * CalcCsv(stats.TotalEHP, 1, 79400)
-    csvs = csvs * CalcCsv(stats.Life, 1, 3600)
-    if stats.SpellSuppressionChance then
-        csvs = csvs * CalcCsv(stats.SpellSuppressionChance, 10, 100)
-    else
-        csvs = csvs * CalcCsv(0, 10, 100)
+        local actor = env[targetStat.actor]
+        local statVal = actor.output[statData.stat]
+        if statVal and statVal > 0 and ((statData.condFunc and statData.condFunc(statVal, actor.output)) or (not statData.condFunc and statVal ~= 0)) then
+            csvs = csvs * CalcCsv(statVal, targetStat.weight, targetStat.target)
+        else
+            csvs = csvs * CalcCsv(0, targetStat.weight, targetStat.target)
+        end
     end
 
-    if not stats.LifeLeechGainRate then
-        stats.LifeLeechGainRate = 0
+    for _, targetStat in maximizeStats do
+        local statData = self.mapDisplayStatsByActor[targetStat.actor][targetStat.stat]
+
+        local actor = env[targetStat.actor]
+        local statVal = actor.output[statData.stat]
+        if statVal and statVal > 0 and ((statData.condFunc and statData.condFunc(statVal, actor.output)) or (not statData.condFunc and statVal ~= 0)) then
+            csvs = csvs * targetStat.weight * statVal
+        else
+            csvs = csvs * 0.01
+        end
     end
 
-    if not stats.LifeRegenRecovery then
-        stats.LifeRegenRecovery = 0
-    end
-
-    if stats.LifeLeechGainRate + stats.LifeRegenRecovery ~= 0 then
-        csvs = csvs * CalcCsv(stats.LifeLeechGainRate + stats.LifeRegenRecovery, 1, 1892)
-    else
-        csvs = csvs * CalcCsv(0, 1, 1892)
-    end
-
-    csvs = csvs * CalcCsv((stats.LightningResist + stats.FireResist + stats.ColdResist) / 3.0, 1, 76)
-
-    if stats.ManaUnreserved then
-        csvs = csvs * CalcCsv(stats.ManaUnreserved, 1, 97)
-    else
-        csvs = csvs * CalcCsv(0, 1, 97)
-    end
-
-    if not stats.ManaLeechGainRate then
-        stats.ManaLeechGainRate = 0
-    end
-
-    csvs = csvs * CalcCsv(stats.ManaLeechGainRate, 1, 100)
-    csvs = csvs * CalcCsv(stats.PhysicalMaximumHitTaken, 1, 11600)
-    csvs = csvs * CalcCsv(stats.LightningMaximumHitTaken, 1, 25000)
-
-    return csvs * stats.CombinedDPS * stats.CombinedDPS
+    return csvs
 end

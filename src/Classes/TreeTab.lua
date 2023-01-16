@@ -17,8 +17,6 @@ local s_gsub = string.gsub
 local s_byte = string.byte
 local dkjson = require "dkjson"
 
-geneticSolver = nil
-
 local TreeTabClass = newClass("TreeTab", "ControlHost", function(self, build)
 	self.ControlHost()
 
@@ -69,8 +67,8 @@ local TreeTabClass = newClass("TreeTab", "ControlHost", function(self, build)
 						for nodeId, node in pairs(self.build.spec.allocNodes) do
 							-- Assumption: Nodes >= 65536 are small cluster passives.
 							if node.type ~= "ClassStart" and node.type ~= "AscendClassStart"
-							and (self.build.spec.tree.clusterNodeMap[node.dn] == nil or node.isKeystone or node.isJewelSocket) and nodeId < 65536
-							and not spec.allocNodes[nodeId] then
+									and (self.build.spec.tree.clusterNodeMap[node.dn] == nil or node.isKeystone or node.isJewelSocket) and nodeId < 65536
+									and not spec.allocNodes[nodeId] then
 								if node.ascendancyName then
 									respec = respec + 5
 								else
@@ -106,21 +104,13 @@ local TreeTabClass = newClass("TreeTab", "ControlHost", function(self, build)
 	self.controls.compareSelect.maxDroppedWidth = 1000
 	self.controls.compareSelect.enableDroppedWidth = true
 	self.controls.compareSelect.enableChangeBoxWidth = true
-
 	self.controls.reset = new("ButtonControl", { "LEFT", self.controls.compareCheck, "RIGHT" }, 8, 0, 60, 20, "Reset", function()
-
-		if geneticSolver == nil then
-			geneticSolver = new("GeneticSolver", self.build)
-		end
-
-		geneticSolver:StartSolve()
-
-		--[[main:OpenConfirmPopup("Reset Tree", "Are you sure you want to reset your passive tree?", "Reset", function()
+		main:OpenConfirmPopup("Reset Tree", "Are you sure you want to reset your passive tree?", "Reset", function()
 			self.build.spec:ResetNodes()
 			self.build.spec:BuildAllDependsAndPaths()
 			self.build.spec:AddUndoState()
 			self.build.buildFlag = true
-		end)]]
+		end)
 	end)
 	self.controls.import = new("ButtonControl", { "LEFT", self.controls.reset, "RIGHT" }, 8, 0, 90, 20, "Import Tree", function()
 		self:OpenImportPopup()
@@ -392,8 +382,8 @@ function TreeTabClass:OpenImportPopup()
 	local versionLookup = "tree/([0-9]+)%.([0-9]+)%.([0-9]+)/"
 	local controls = { }
 	local function decodeTreeLink(treeLink, newTreeVersion)
-			-- newTreeVersion is passed in as an output of validateTreeVersion(). It will always be a valid tree version text string
-			-- If there was a version on the url, and it changed the version of the active spec, dump the active spec and get one of the right version.
+		-- newTreeVersion is passed in as an output of validateTreeVersion(). It will always be a valid tree version text string
+		-- If there was a version on the url, and it changed the version of the active spec, dump the active spec and get one of the right version.
 		if newTreeVersion ~= self.specList[self.activeSpec].treeVersion then
 			local newSpec = new("PassiveSpec", self.build, newTreeVersion)
 			newSpec:SelectClass(self.build.spec.curClassId)
@@ -518,22 +508,22 @@ function TreeTabClass:OpenExportPopup()
 end
 
 function TreeTabClass:SaveMasteryPopup(node, listControl)
-		if listControl.selValue == nil then
-			return
-		end
-		local effect = self.build.spec.tree.masteryEffects[listControl.selValue.id]
-		node.sd = effect.sd
-		node.allMasteryOptions = false
-		node.reminderText = { "Tip: Right click to select a different effect" }
-		self.build.spec.tree:ProcessStats(node)
-		self.build.spec.masterySelections[node.id] = effect.id
-		if not node.alloc then
-			self.build.spec:AllocNode(node, self.viewer.tracePath and node == self.viewer.tracePath[#self.viewer.tracePath] and self.viewer.tracePath)
-		end
-		self.build.spec:AddUndoState()
-		self.modFlag = true
-		self.build.buildFlag = true
-		main:ClosePopup()
+	if listControl.selValue == nil then
+		return
+	end
+	local effect = self.build.spec.tree.masteryEffects[listControl.selValue.id]
+	node.sd = effect.sd
+	node.allMasteryOptions = false
+	node.reminderText = { "Tip: Right click to select a different effect" }
+	self.build.spec.tree:ProcessStats(node)
+	self.build.spec.masterySelections[node.id] = effect.id
+	if not node.alloc then
+		self.build.spec:AllocNode(node, self.viewer.tracePath and node == self.viewer.tracePath[#self.viewer.tracePath] and self.viewer.tracePath)
+	end
+	self.build.spec:AddUndoState()
+	self.modFlag = true
+	self.build.buildFlag = true
+	main:ClosePopup()
 end
 
 function TreeTabClass:OpenMasteryPopup(node, viewPort)
@@ -1344,40 +1334,40 @@ function TreeTabClass:FindTimelessJewel()
 				local newNode = nil
 				for _, legionNode in ipairs(legionNodes) do
 					if legionNode.id == modNode.id or (totalModIDs[modNode.id] and totalModIDs[modNode.id][legionNode.id]) then
-							newNode = { }
-							newNode.id = modNode.id
-							if modNode.type == "vaal" then
-								if #legionNode.sd == 2 then
-									newNode.calcMultiple = true
-									if legionNode.modListGenerated then
-										newNode.node = copyTable(legionNode.modListGenerated)
-									else
-										-- generate modList
-										local modList1, extra1 = modLib.parseMod(replaceHelperFunc(legionNode.sd[1], legionNode.sortedStats[1], legionNode.stats[legionNode.sortedStats[1]], 100))
-										local modList2, extra2 = modLib.parseMod(replaceHelperFunc(legionNode.sd[2], legionNode.sortedStats[2], legionNode.stats[legionNode.sortedStats[2]], 100))
-										local modLists = { { modList = modList1 }, { modList = modList2 } }
-										legionNode.modListGenerated = copyTable(modLists)
-										newNode.node = copyTable(modLists)
-									end
-									newNode.node[1].id = legionNode.id
-									newNode.node[2].id = legionNode.id
+						newNode = { }
+						newNode.id = modNode.id
+						if modNode.type == "vaal" then
+							if #legionNode.sd == 2 then
+								newNode.calcMultiple = true
+								if legionNode.modListGenerated then
+									newNode.node = copyTable(legionNode.modListGenerated)
 								else
-									if legionNode.modListGenerated then
-										newNode.modList = copyTable(legionNode.modListGenerated)
-									else
-										-- generate modList
-										local modList, extra = modLib.parseMod(replaceHelperFunc(legionNode.sd[1], legionNode.sortedStats[1], legionNode.stats[legionNode.sortedStats[1]], 100))
-										legionNode.modListGenerated = modList
-										newNode.modList = modList
-									end
+									-- generate modList
+									local modList1, extra1 = modLib.parseMod(replaceHelperFunc(legionNode.sd[1], legionNode.sortedStats[1], legionNode.stats[legionNode.sortedStats[1]], 100))
+									local modList2, extra2 = modLib.parseMod(replaceHelperFunc(legionNode.sd[2], legionNode.sortedStats[2], legionNode.stats[legionNode.sortedStats[2]], 100))
+									local modLists = { { modList = modList1 }, { modList = modList2 } }
+									legionNode.modListGenerated = copyTable(modLists)
+									newNode.node = copyTable(modLists)
 								end
-								newNode.divisor = 100
+								newNode.node[1].id = legionNode.id
+								newNode.node[2].id = legionNode.id
 							else
-								newNode.modList = legionNode.modList
-								if modNode.totalMod then
-									newNode.divisor = legionNode.modList[1].value
+								if legionNode.modListGenerated then
+									newNode.modList = copyTable(legionNode.modListGenerated)
+								else
+									-- generate modList
+									local modList, extra = modLib.parseMod(replaceHelperFunc(legionNode.sd[1], legionNode.sortedStats[1], legionNode.stats[legionNode.sortedStats[1]], 100))
+									legionNode.modListGenerated = modList
+									newNode.modList = modList
 								end
 							end
+							newNode.divisor = 100
+						else
+							newNode.modList = legionNode.modList
+							if modNode.totalMod then
+								newNode.divisor = legionNode.modList[1].value
+							end
+						end
 						break
 					end
 				end
@@ -1668,9 +1658,9 @@ function TreeTabClass:FindTimelessJewel()
 			end
 			for nodeId in pairs(radiusNodes) do
 				if not rootNodes[nodeId]
-				and not treeData.nodes[nodeId].isJewelSocket
-				and not treeData.nodes[nodeId].isKeystone
-				and (not controls.socketFilter.state or allocatedNodes[nodeId]) then
+						and not treeData.nodes[nodeId].isJewelSocket
+						and not treeData.nodes[nodeId].isKeystone
+						and (not controls.socketFilter.state or allocatedNodes[nodeId]) then
 					if (treeData.nodes[nodeId].isNotable or timelessData.jewelType.id == 1) then
 						targetNodes[nodeId] = true
 					elseif desiredNodes["totalStat"] and not treeData.nodes[nodeId].isNotable then
@@ -1785,10 +1775,10 @@ function TreeTabClass:FindTimelessJewel()
 				local   matchPattern4 = "%.([0-9])0"
 				local replacePattern4 = ".%1  "
 				return (" " .. s_format("%006.2f", input))
-				:gsub(matchPattern1, replacePattern1):gsub(matchPattern1, replacePattern1)
-				:gsub(matchPattern2, replacePattern2):gsub(matchPattern2, replacePattern2)
-				:gsub(matchPattern3, replacePattern3)
-				:gsub(matchPattern4, replacePattern4)
+						:gsub(matchPattern1, replacePattern1):gsub(matchPattern1, replacePattern1)
+						:gsub(matchPattern2, replacePattern2):gsub(matchPattern2, replacePattern2)
+						:gsub(matchPattern3, replacePattern3)
+						:gsub(matchPattern4, replacePattern4)
 			end
 			local searchResultsIdx = 1
 			for seedMatch, seedData in pairs(resultNodes) do

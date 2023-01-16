@@ -1,31 +1,29 @@
-
 local GeneticSolver = newClass("GeneticSolver", function(self, build)
     self.build = build
 
     local path_of_building_genetic_solver = require 'path_of_building_genetic_solver'
-
     self.backendGeneticSolver = path_of_building_genetic_solver.CreateGeneticSolver()
-
-    self.backendGeneticSolver:CreateWorkers(22)
 end)
 
-function GeneticSolver:StartSolve()
-    --package.cpath = package.cpath .. ';D:/JetBrains/Toolbox/apps/IDEA-U/ch-0/223.8214.52.plugins/EmmyLua/debugger/emmy/windows/x64/?.dll'
-    --local dbg = require('emmy_core')
-    --dbg.tcpListen('localhost', 9966)
-    --dbg.waitIDE()
+function GeneticSolver:AllocateWorkersIfNotExists()
+    if not self.workersAllocated then
+        self.backendGeneticSolver:CreateWorkers()
+        self.workersAllocated = true
+    end
+end
 
+function GeneticSolver:StartSolve(maxGenerationsCount,
+                                  stopGenerationEps,
+                                  countGenerationsMutateEps,
+                                  populationMaxGenerationSize)
     if self.backendGeneticSolver:IsProgress() then
         error("Cannot start process. Already started")
     end
 
-    local maxGenerationsCount = 5000
-    local stopGenerationEps = 100
-    local countGenerationsMutateEps = 20
-    local populationMaxGenerationSize = 5000
+    self:AllocateWorkersIfNotExists()
 
-    self.targetNormalNodesCount = 107
-    self.targetAscendancyNodesCount = 8
+    self.targetNormalNodesCount = 89
+    self.targetAscendancyNodesCount = 2
 
     local xmlText = self.build:SaveDB("genetic_build.xml")
     local file = io.open("genetic_build.xml", "w+")

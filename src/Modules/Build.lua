@@ -140,12 +140,12 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild)
 	end
 	self.controls.pointDisplay.width = function(control)
 		local PointsUsed, AscUsed = self.spec:CountAllocNodes()
-		local bandit = self.calcsTab.mainOutput.ExtraPoints or 0 
+		local bandit = self.calcsTab.mainOutput.ExtraPoints or 0
 		local usedMax, ascMax, levelreq, currentAct, banditStr, labSuggest = 99 + 22 + bandit, 8, 1, 1, "", ""
-		local acts = { 
-			[1] = { level = 1, questPoints = 0 }, 
-			[2] = { level = 12, questPoints = 2 }, 
-			[3] = { level = 22, questPoints = 3 + bandit }, 
+		local acts = {
+			[1] = { level = 1, questPoints = 0 },
+			[2] = { level = 12, questPoints = 2 },
+			[3] = { level = 22, questPoints = 3 + bandit },
 			[4] = { level = 32, questPoints = 5 + bandit },
 			[5] = { level = 40, questPoints = 6 + bandit },
 			[6] = { level = 44, questPoints = 8 + bandit },
@@ -155,7 +155,7 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild)
 			[10] = { level = 64, questPoints = 19 + bandit },
 			[11] = { level = 67, questPoints = 22 + bandit }
 		}
-				
+
 		-- loop for how much quest skillpoints are used with the progress
 		while currentAct < 11 and PointsUsed + 1 - acts[currentAct].questPoints > acts[currentAct + 1].level do
 			currentAct = currentAct + 1
@@ -165,10 +165,10 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild)
 		if currentAct <= 2 and bandit ~= 0 then
 			bandit = 0
 		end
-		
-		-- to prevent a negative level at a blank sheet the level requirement will be set dependent on points invested until caught up with quest skillpoints 
+
+		-- to prevent a negative level at a blank sheet the level requirement will be set dependent on points invested until caught up with quest skillpoints
 		levelreq = math.max(PointsUsed - acts[currentAct].questPoints + 1, acts[currentAct].level)
-		
+
 		-- Ascendency points for lab
 		-- this is a recommendation for beginners who are using Path of Building for the first time and trying to map out progress in PoB
 		local labstr = {"\nLabyrinth: Normal Lab", "\nLabyrinth: Cruel Lab", "\nLabyrinth: Merciless Lab", "\nLabyrinth: Uber Lab"}
@@ -178,10 +178,10 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild)
 		elseif levelreq >= 68 and levelreq < 75 then labSuggest = labstr[3]
 		elseif levelreq >= 75 and levelreq < 90 then labSuggest = labstr[4] end
 		if levelreq < 90 and currentAct <= 10 then strAct = currentAct end
-		
+
 		control.str = string.format("%s%3d / %3d   %s%d / %d", PointsUsed > usedMax and "^1" or "^7", PointsUsed, usedMax, AscUsed > ascMax and "^1" or "^7", AscUsed, ascMax)
 		control.req = "Required Level: ".. levelreq .. "\nEstimated Progress:\nAct: ".. strAct .. "\nQuestpoints: " .. acts[currentAct].questPoints - bandit .. "\nBandits Skillpoints: " .. bandit .. labSuggest
-		
+
 		if PointsUsed > usedMax then InsertIfNew(self.controls.warnings.lines, "You have too many passive points allocated") end
 		if AscUsed > ascMax then InsertIfNew(self.controls.warnings.lines, "You have too many ascendancy points allocated") end
 		return DrawStringWidth(16, "FIXED", control.str) + 8
@@ -228,7 +228,7 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild)
 				end
 				if mult > 0.01 then
 					local line = level
-					if level >= 68 then 
+					if level >= 68 then
 						line = line .. string.format(" (Tier %d)", level - 67)
 					end
 					line = line .. string.format(": %.1f%%", mult * 100)
@@ -249,7 +249,7 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild)
 					self.spec:SelectClass(value.classId)
 					self.spec:AddUndoState()
 					self.spec:SetWindowTitleWithBuildClass()
-					self.buildFlag = true					
+					self.buildFlag = true
 				end)
 			end
 		end
@@ -501,6 +501,10 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild)
 		self.viewMode = "CALCS"
 	end)
 	self.controls.modeCalcs.locked = function() return self.viewMode == "CALCS" end
+	self.controls.modeOptimization = new("ButtonControl", {"TOPRIGHT",self.controls.modeCalcs,"BOTTOMRIGHT"}, 0, 4, 72, 20, "Optimize", function()
+		self.viewMode = "OPTIMIZATION"
+	end)
+	self.controls.modeOptimization.locked = function() return self.viewMode == "OPTIMIZATION" end
 	-- Skills
 	self.controls.mainSkillLabel = new("LabelControl", {"TOPLEFT",self.anchorSideBar,"TOPLEFT"}, 0, 54, 300, 16, "^7Main Skill:")
 	self.controls.mainSocketGroup = new("DropDownControl", {"TOPLEFT",self.controls.mainSkillLabel,"BOTTOMLEFT"}, 0, 2, 300, 18, nil, function(index, value)
@@ -634,6 +638,7 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild)
 	self.treeTab = new("TreeTab", self)
 	self.skillsTab = new("SkillsTab", self)
 	self.calcsTab = new("CalcsTab", self)
+	self.optimizationTab = new("OptimizationTab", self)
 
 	-- Load sections from the build file
 	self.savers = {
@@ -645,11 +650,12 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild)
 		["Skills"] = self.skillsTab,
 		["Calcs"] = self.calcsTab,
 		["Import"] = self.importTab,
+		["Optimization"] = self.optimizationTab
 	}
 	self.legacyLoaders = { -- Special loaders for legacy sections
 		["Spec"] = self.treeTab,
 	}
-	
+
 	--special rebuild to properly initialise boss placeholders
 	self.configTab:BuildModList()
 
@@ -761,7 +767,7 @@ function buildMode:Shutdown()
 	if launch.devMode and self.targetVersion and not self.abortSave then
 		if self.dbFileName then
 			self:SaveDBFile()
-		elseif self.unsaved then		
+		elseif self.unsaved then
 			self.dbFileName = main.buildPath.."~~temp~~.xml"
 			self.buildName = "~~temp~~"
 			self.dbFileSubPath = ""
@@ -914,6 +920,18 @@ function buildMode:OnFrame(inputEvents)
 		self:CloseBuild()
 	end
 
+	if self.optimizationTab and self.optimizationTab.geneticSolver then
+		local geneticSolver = self.optimizationTab.geneticSolver
+
+		local currentBestDnaNumber = geneticSolver:GetBestDnaNumber()
+		if currentBestDnaNumber ~= 0 then
+			if geneticSolverBestDnaNumber == nil or geneticSolverBestDnaNumber ~= currentBestDnaNumber then
+				geneticSolverBestDnaNumber = currentBestDnaNumber
+				geneticSolver:GenerateBuildFromCurrentBestResult()
+			end
+		end
+	end
+
 	for id, event in ipairs(inputEvents) do
 		if event.type == "KeyDown" then
 			if event.key == "MOUSE4" then
@@ -1012,6 +1030,8 @@ function buildMode:OnFrame(inputEvents)
 		self.itemsTab:Draw(tabViewPort, inputEvents)
 	elseif self.viewMode == "CALCS" then
 		self.calcsTab:Draw(tabViewPort, inputEvents)
+	elseif self.viewMode == "OPTIMIZATION" then
+		self.optimizationTab:Draw(tabViewPort, inputEvents)
 	end
 
 	self.unsaved = self.modFlag or self.notesTab.modFlag or self.configTab.modFlag or self.treeTab.modFlag or self.spec.modFlag or self.skillsTab.modFlag or self.itemsTab.modFlag or self.calcsTab.modFlag
@@ -1146,7 +1166,7 @@ function buildMode:OpenSpectreLibrary()
 	for id in pairs(self.data.spectres) do
 		t_insert(sourceList, id)
 	end
-	table.sort(sourceList, function(a,b) 
+	table.sort(sourceList, function(a,b)
 		if self.data.minions[a].name == self.data.minions[b].name then
 			return a < b
 		else
@@ -1275,7 +1295,7 @@ function buildMode:FormatStat(statData, statVal, overCapStatVal, colorOverride)
 	if statData.label == "Unreserved Life" and statVal == 0 then
 		color = colorCodes.NEGATIVE
 	end
-	
+
 	local valStr = s_format("%"..statData.fmt, val)
 	valStr:gsub("%.", main.decimalSeparator)
 	valStr = color .. formatNumSep(valStr)
@@ -1363,8 +1383,8 @@ function buildMode:AddDisplayStatList(statList, actor)
 					end
 				end
 			elseif statData.label and statData.condFunc and statData.condFunc(actor.output) then
-				t_insert(statBoxList, { 
-					height = 16, labelColor..statData.label..":", 
+				t_insert(statBoxList, {
+					height = 16, labelColor..statData.label..":",
 					"^7"..actor.output[statData.labelStat].."%^x808080" .. " (" .. statData.val  .. ")",})
 			elseif not statBoxList[#statBoxList] or statBoxList[#statBoxList][1] then
 				t_insert(statBoxList, { height = 6 })
@@ -1491,7 +1511,7 @@ do
 			if omni and (omni > 0 or omni > self.calcsTab.mainOutput.Omni) then
 				t_insert(req, s_format("%s%d ^x7F7F7FOmni", main:StatColor(omni, 0, self.calcsTab.mainOutput.Omni), omni))
 			end
-		else 
+		else
 			if str and (str >= 14 or str > self.calcsTab.mainOutput.Str) then
 				t_insert(req, s_format("%s%d ^x7F7F7FStr", main:StatColor(str, strBase, self.calcsTab.mainOutput.Str), str))
 			end
@@ -1501,11 +1521,11 @@ do
 			if int and (int >= 14 or int > self.calcsTab.mainOutput.Int) then
 				t_insert(req, s_format("%s%d ^x7F7F7FInt", main:StatColor(int, intBase, self.calcsTab.mainOutput.Int), int))
 			end
-		end	
+		end
 		if req[1] then
 			tooltip:AddLine(16, "^x7F7F7FRequires "..table.concat(req, "^x7F7F7F, "))
 			tooltip:AddSeparator(10)
-		end	
+		end
 		wipeTable(req)
 	end
 end
