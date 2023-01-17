@@ -20,21 +20,56 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
 
     self.anchorControls = new("Control", nil, 0, 0, 0, 20)
 
+    local enabledNotInProgressFunc = function()
+        return not self.geneticSolver or self.geneticSolver:IsProgress() == false
+    end
+
     self.controls.start = new("ButtonControl", { "LEFT", self.anchorControls, "LEFT" }, 0, 0, 200, 30, "Start optimization", function()
         if not self.geneticSolver then
             self.geneticSolver = new("GeneticSolver", self.build)
+        end
+
+        local targetStatsCount = 0
+        local targetStats = { }
+        local maximizeStatsCount = 0
+        local maximizeStats = { }
+
+        for _, targetStat in pairs(self.targetStats) do
+            if targetStat.isMaximize then
+                maximizeStatsCount = maximizeStatsCount + 1
+                maximizeStats[maximizeStatsCount] = {
+                    stat = targetStat.stat.stat,
+                    actor = targetStat.stat.actor,
+                    weight = targetStat.weight
+                }
+            else
+                targetStatsCount = targetStatsCount + 1
+                targetStats[targetStatsCount] = {
+                    stat = targetStat.stat.stat,
+                    actor = targetStat.stat.actor,
+                    weight = targetStat.weight,
+                    target = targetStat.target
+                }
+            end
         end
 
         self.geneticSolver:StartSolve(
                 self.maxGenerationCount,
                 self.stopGenerationEps,
                 self.countGenerationsMutateEps,
-                self.populationMaxGenerationSize
+                self.populationMaxGenerationSize,
+                self.targetNormalNodesCount,
+                self.targetAscendancyNodesCount,
+                targetStats,
+                maximizeStats
         )
     end)
-    self.controls.start.locked = function()
-        return self.geneticSolver and self.geneticSolver:IsProgress()
-    end
+    self.controls.start.enabled = enabledNotInProgressFunc
+
+    self.controls.stop = new("ButtonControl", { "TOPLEFT", self.controls.start, "TOPRIGHT" }, 8, 0, 200, 30, "Stop optimization", function()
+        self.geneticSolver:StopSolve()
+    end)
+    self.controls.stop.enabled = function() return enabledNotInProgressFunc() == false end
 
     self.controls.geneticOptionSection = new("SectionControl", {"TOPLEFT", self.controls.start, "BOTTOMLEFT"}, 0, 60, 400, 120, "Genetic Options")
     local prevControlGeneticOptionSection = self.controls.geneticOptionSection
@@ -46,6 +81,7 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     self.controls.maxGenerationCount.tooltipText = function()
         return "Max generations used by genetic algorithm"
     end
+    self.controls.maxGenerationCount.enabled = enabledNotInProgressFunc
     self.controls.controlMaxGenerationCountLabel = new("LabelControl", {"RIGHT", self.controls.maxGenerationCount, "LEFT"}, -4, 0, 0, 14, "Max generations number:")
     prevControlGeneticOptionSection = self.controls.maxGenerationCount
     --
@@ -55,6 +91,7 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     self.controls.stopGenerationEps.tooltipText = function()
         return "The number of generations in which the build does not improve, after which the algorithm stops"
     end
+    self.controls.stopGenerationEps.enabled = enabledNotInProgressFunc
     self.controls.stopGenerationEpsLabel = new("LabelControl", {"RIGHT", self.controls.stopGenerationEps, "LEFT"}, -4, 0, 0, 14, "Stop generation eps:")
     prevControlGeneticOptionSection = self.controls.stopGenerationEps
     --
@@ -64,6 +101,7 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     self.controls.countGenerationsMutateEps.tooltipText = function()
         return "Number of generations after which more aggressive mutations are included"
     end
+    self.controls.countGenerationsMutateEps.enabled = enabledNotInProgressFunc
     self.controls.countGenerationsMutateEpsLabel = new("LabelControl", {"RIGHT", self.controls.countGenerationsMutateEps, "LEFT"}, -4, 0, 0, 14, "Number generations mutate eps:")
     prevControlGeneticOptionSection = self.controls.countGenerationsMutateEps
     --
@@ -73,6 +111,7 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     self.controls.populationMaxGenerationSize.tooltipText = function()
         return "Maximum number of individuals in the population"
     end
+    self.controls.populationMaxGenerationSize.enabled = enabledNotInProgressFunc
     self.controls.populationMaxGenerationSizeLabel = new("LabelControl", {"RIGHT", self.controls.populationMaxGenerationSize, "LEFT"}, -4, 0, 0, 14, "Population max size:")
     prevControlGeneticOptionSection = self.controls.stopGenerationEps
     --
@@ -87,6 +126,7 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     self.controls.targetNormalNodesCount.tooltipText = function()
         return "Required number of points invested in regular nodes"
     end
+    self.controls.targetNormalNodesCount.enabled = enabledNotInProgressFunc
     self.controls.targetNormalNodesCountLabel = new("LabelControl", {"RIGHT", self.controls.targetNormalNodesCount, "LEFT"}, -4, 0, 0, 14, "Number of normal nodes:")
     prevControlTargetsSection = self.controls.targetNormalNodesCount
     --
@@ -96,50 +136,82 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     self.controls.targetAscendancyNodesCount.tooltipText = function()
         return "Required number of points invested in ascendancy nodes"
     end
+    self.controls.targetAscendancyNodesCount.enabled = enabledNotInProgressFunc
     self.controls.targetAscendancyNodesCountLabel = new("LabelControl", {"RIGHT", self.controls.targetAscendancyNodesCount, "LEFT"}, -4, 0, 0, 14, "Number of ascendancy nodes:")
     prevControlTargetsSection = self.controls.targetAscendancyNodesCount
     --
-    self.controls.targetsList = new("ListControl", {"TOPLEFT", prevControlTargetsSection , "BOTTOMLEFT"}, -190, 12, 360, 220, 14, "Selected targets", function(selectedNode)
-
-    end)
+    self.controls.targetsList = new("ListControl", {"TOPLEFT", prevControlTargetsSection , "BOTTOMLEFT"}, -190, 12, 360, 220, 14, true, true)
     self.controls.targetsList.colList = {
-        { width = 340 * 0.70, label = "Stat", sortable = true },
+        { width = 340 * 0.60, label = "Stat", sortable = true },
         { width = 340 * 0.15, label = "Weight" },
-        { width = 340 * 0.15, label = "Target" }
+        { width = 340 * 0.25, label = "Target" }
     }
     self.controls.targetsList.colLabels = true
-    function self.controls.targetsList:GetRowValue(column, index, values)
+    self.controls.targetsList.GetRowValue = function(_, column, index, values)
+        if column == 3 and self.targetStats[values[4]].isMaximize then
+            return "MAX"
+        end
+
         return values[column]
     end
+    self.controls.targetsList.OnSelClick = function(_, index, selectedStatList, doubleClick)
+        if doubleClick then
+            local statName = selectedStatList[4]
+
+            self.targetStats[statName] = nil
+            self:GenerateTargetList()
+        end
+    end
+    self.controls.targetsList.AddValueTooltip = function(_, tooltip, _, _)
+        tooltip.AddLine(16, "^7Double-click on stat to remove it from the list")
+    end
+    self.controls.targetsList.enabled = enabledNotInProgressFunc
     --
     --
     self.controls.addTargetSection = new("SectionControl", {"TOPLEFT", self.controls.targetsSection, "BOTTOMLEFT"}, 0, 24, 400, 150, "Add target stat")
     local prevControlAddTargetSection = self.controls.addTargetSection
 
+    local statsPlayer = { }
+    local statsMinion = { }
     self.stats = { }
     self.statsCount = 0
-    for _, stat in pairs(self.build.displayStats) do
-        if stat.stat then
-            self.statsCount = self.statsCount + 1
-            self.stats[self.statsCount] = {
-                stat = stat,
+    for _, displayStat in pairs(self.build.displayStats) do
+        if displayStat.stat then
+
+            local stat = {
+                stat = displayStat.stat,
                 actor = 'player',
-                label = stat.label,
-                fmt = stat.fmt
+                label = displayStat.label,
+                fmt = displayStat.fmt
             }
-        end
-    end
-    for _, stat in pairs(self.build.minionDisplayStats) do
-        if stat.stat then
+
             self.statsCount = self.statsCount + 1
-            self.stats[self.statsCount] = {
-                stat = stat,
-                actor = 'minion',
-                label = "Minion: " .. stat.label,
-                fmt = stat.fmt
-            }
+            self.stats[self.statsCount] = stat
+
+            statsPlayer[displayStat.stat] = stat
         end
     end
+    for _, displayStat in pairs(self.build.minionDisplayStats) do
+        if displayStat.stat then
+            local stat = {
+                stat = displayStat.stat,
+                actor = 'minion',
+                label = "Minion: " .. displayStat.label,
+                fmt = displayStat.fmt
+            }
+
+            self.statsCount = self.statsCount + 1
+            self.stats[self.statsCount] = stat
+
+
+            statsMinion[displayStat.stat] = stat
+        end
+    end
+
+    self.statsByActor = {
+        player = statsPlayer,
+        minion = statsMinion
+    }
 
     for _, stat in pairs(self.stats) do
         if stat.fmt and string.find(stat.fmt, "%%") then
@@ -153,6 +225,7 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
         self.selectedStatNumber = index
     end)
     self.controls.statsDropdown.selIndex = self.selectedStatNumber
+    self.controls.statsDropdown.enabled = enabledNotInProgressFunc
     self.controls.statsDropdownLabel = new("LabelControl", {"RIGHT", self.controls.statsDropdown, "LEFT"}, -4, 0, 0, 14, "Stat:")
     prevControlAddTargetSection = self.controls.statsDropdown
     --
@@ -162,13 +235,14 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     self.controls.currentStatWeight.tooltipText = function()
         return "Weight of stat"
     end
+    self.controls.currentStatWeight.enabled = enabledNotInProgressFunc
     self.controls.currentStatWeightLabel = new("LabelControl", {"RIGHT", self.controls.currentStatWeight, "LEFT"}, -4, 0, 0, 14, "Weight:")
     prevControlAddTargetSection = self.controls.currentStatWeight
     --
     self.controls.currentStatTarget = new("EditControl", { "TOPLEFT", prevControlAddTargetSection, "BOTTOMLEFT" }, 0, 4, 90, 18, tostring(self.currentStatTarget), nil, nil, 7, function(buf, placeholder)
         self.currentStatTarget = tonumber(buf)
     end)
-    self.controls.currentStatTarget.enabled = function() return self.currentStatIsMaximize == false end
+    self.controls.currentStatTarget.enabled = function() return self.currentStatIsMaximize == false and enabledNotInProgressFunc() end
     self.controls.currentStatTarget.tooltipText = function()
         return "The value to which the optimizer will strive. No more, no less"
     end
@@ -178,23 +252,21 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     self.controls.currentStatIsMaximize = new("CheckBoxControl", { "TOPLEFT", prevControlAddTargetSection, "BOTTOMLEFT" }, 0, 4, 18, self.currentStatIsMaximize, function(state)
         self.currentStatIsMaximize = state
     end, "Maximize target stat")
+    self.controls.currentStatIsMaximize.enabled = enabledNotInProgressFunc
     self.controls.currentStatIsMaximizeLabel = new("LabelControl", {"RIGHT", self.controls.currentStatIsMaximize, "LEFT"}, -4, 0, 0, 14, "Maximize stat?:")
     prevControlAddTargetSection = self.controls.currentStatIsMaximize
     --
-    self.controls.addTargetStat = new("ButtonControl", { "TOPLEFT", prevControlAddTargetSection, "BOTTOMLEFT" }, -50, 8, 100, 20, "Add target stat", function()
+    self.controls.addTargetStat = new("ButtonControl", { "TOPLEFT", prevControlAddTargetSection, "BOTTOMLEFT" }, -75, 8, 150, 20, "Add target stat", function()
         local selectedStat = self.stats[self.selectedStatNumber]
         local target = self.currentStatTarget
 
-        if self.currentStatIsMaximize then
-            target = 'MAX'
-        end
-
-        if not target then
+        if not self.currentStatIsMaximize and not target then
             return
         end
 
         self.targetStats[selectedStat.stat] = {
             stat = selectedStat,
+            label = selectedStat.label,
             weight = self.currentStatWeight,
             target = target,
             isMaximize = self.currentStatIsMaximize
@@ -202,17 +274,28 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
 
         self:GenerateTargetList()
     end)
+    self.controls.addTargetStat.label = function()
+        local stat = self.stats[self.selectedStatNumber]
+
+        if stat and self.targetStats[stat.stat] then
+            return "Change target stat"
+        end
+
+        return "Add target stat"
+    end
+    self.controls.addTargetStat.enabled = enabledNotInProgressFunc
 end)
 
 function OptimizationTabClass:GenerateTargetList()
     local list = { }
     local count = 0
-    for _, stat in pairs(self.targetStats) do
+    for _, targetStat in pairs(self.targetStats) do
         count = count + 1
         list[count] = {
-            stat.stat.label,
-            stat.weight,
-            stat.target
+            targetStat.label,
+            targetStat.weight,
+            targetStat.target,
+            targetStat.stat.stat
         }
     end
 
@@ -228,10 +311,89 @@ function OptimizationTabClass:Draw(viewPort, inputEvents)
 end
 
 function OptimizationTabClass:Save(xml)
-    -- TODO
-    xml.attrib = {}
+    xml.attrib = {
+        maxGenerationCount = tostring(self.maxGenerationCount),
+        stopGenerationEps = tostring(self.stopGenerationEps),
+        countGenerationsMutateEps = tostring(self.countGenerationsMutateEps),
+        populationMaxGenerationSize = tostring(self.populationMaxGenerationSize),
+
+        targetNormalNodesCount = tostring(self.targetNormalNodesCount),
+        targetAscendancyNodesCount = tostring(self.targetAscendancyNodesCount)
+    }
+
+    local targetStatsXml = {
+        elem = "TargetStats"
+    }
+
+    table.insert(xml, targetStatsXml)
+
+    for _, targetStat in pairs(self.targetStats) do
+        local statXml = {
+            elem = "Stat",
+            attrib = {
+                stat = targetStat.stat.stat,
+                actor = targetStat.stat.actor,
+                weight = tostring(targetStat.weight),
+                target = tostring(targetStat.target),
+                isMaximize = tostring(targetStat.isMaximize)
+            }
+        }
+
+        table.insert(targetStatsXml, statXml)
+    end
 end
 
-function OptimizationTabClass:Load(xml, dbFileName)
-    -- TODO
+function OptimizationTabClass:Load(xml, _)
+    local attrib = xml.attrib
+    if attrib then
+        if attrib.maxGenerationCount ~= nil then
+            self.controls.maxGenerationCount:SetText(attrib.maxGenerationCount, true)
+        end
+
+        if attrib.stopGenerationEps ~= nil then
+            self.controls.stopGenerationEps:SetText(attrib.stopGenerationEps, true)
+        end
+
+        if attrib.countGenerationsMutateEps ~= nil then
+            self.controls.countGenerationsMutateEps:SetText(attrib.countGenerationsMutateEps, true)
+        end
+
+        if attrib.populationMaxGenerationSize ~= nil then
+            self.controls.populationMaxGenerationSize:SetText(attrib.populationMaxGenerationSize, true)
+        end
+
+        if attrib.targetNormalNodesCount ~= nil then
+            self.controls.targetNormalNodesCount:SetText(attrib.targetNormalNodesCount, true)
+        end
+
+        if attrib.targetAscendancyNodesCount ~= nil then
+            self.controls.targetAscendancyNodesCount:SetText(attrib.targetAscendancyNodesCount, true)
+        end
+    end
+
+    self.targetStats = {  }
+
+    for _, node in pairs(xml) do
+        if type(node) == "table" and node.elem == "TargetStats" then
+            for _, targetStatsNode in pairs(node) do
+                if type(targetStatsNode) == "table" and targetStatsNode.elem == "Stat" then
+                    local statAttrib = targetStatsNode.attrib
+
+                    if statAttrib then
+                        local stat = self.statsByActor[statAttrib.actor][statAttrib.stat]
+
+                        self.targetStats[stat.stat] = {
+                            stat = stat,
+                            label = stat.label,
+                            weight = tonumber(statAttrib.weight),
+                            target = tonumber(statAttrib.target),
+                            isMaximize = statAttrib.isMaximize == "true"
+                        }
+                    end
+                end
+            end
+        end
+    end
+
+    self:GenerateTargetList()
 end

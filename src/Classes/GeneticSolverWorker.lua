@@ -8,6 +8,7 @@ function GeneticSolverWorker()
 
     local dnaEncoder
     local sessionParameters
+    local fitnessFunction
 
     local sessionNumber = 0
 
@@ -29,6 +30,7 @@ function GeneticSolverWorker()
             runCallback("OnFrame")
 
             dnaEncoder = GeneticWorkerCreateDnaEncoder(build)
+            fitnessFunction = new("GeneticSolverFitnessFunction", build)
 
             sessionParameters = GeneticWorkerGetSessionParameters()
         end
@@ -40,11 +42,12 @@ function GeneticSolverWorker()
                     sessionParameters.targetAscendancyNodesCount
             );
 
-            local fitnessScore = GeneticSolverFitnessFunction.CalculateAndGetFitnessScore(
-                    build,
+            local fitnessScore = fitnessFunction:CalculateAndGetFitnessScore(
                     dnaConvertResult,
                     sessionParameters.targetNormalNodesCount,
-                    sessionParameters.targetAscendancyNodesCount
+                    sessionParameters.targetAscendancyNodesCount,
+                    sessionParameters.targetStats,
+                    sessionParameters.maximizeStats
             )
 
             GeneticWorkerSetResultToHandler(dnaCommand.handler, fitnessScore)

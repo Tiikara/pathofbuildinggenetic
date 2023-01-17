@@ -15,15 +15,19 @@ end
 function GeneticSolver:StartSolve(maxGenerationsCount,
                                   stopGenerationEps,
                                   countGenerationsMutateEps,
-                                  populationMaxGenerationSize)
+                                  populationMaxGenerationSize,
+                                  targetNormalNodesCount,
+                                  targetAscendancyNodesCount,
+                                  targetStats,
+                                  maximizeStats)
     if self.backendGeneticSolver:IsProgress() then
         error("Cannot start process. Already started")
     end
 
     self:AllocateWorkersIfNotExists()
 
-    self.targetNormalNodesCount = 89
-    self.targetAscendancyNodesCount = 2
+    self.targetNormalNodesCount = targetNormalNodesCount
+    self.targetAscendancyNodesCount = targetAscendancyNodesCount
 
     local xmlText = self.build:SaveDB("genetic_build.xml")
     local file = io.open("genetic_build.xml", "w+")
@@ -42,8 +46,14 @@ function GeneticSolver:StartSolve(maxGenerationsCount,
             self.dnaEncoder:GetTreeNodesCount(),
             self.dnaEncoder:GetMasteryCount(),
             self.targetNormalNodesCount,
-            self.targetAscendancyNodesCount
+            self.targetAscendancyNodesCount,
+            targetStats,
+            maximizeStats
     )
+end
+
+function GeneticSolver:StopSolve()
+    self.backendGeneticSolver:StopSolve()
 end
 
 function GeneticSolver:GetBestDnaNumber()
