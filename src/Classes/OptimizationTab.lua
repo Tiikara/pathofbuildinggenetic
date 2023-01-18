@@ -39,6 +39,7 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
                 maximizeStatsCount = maximizeStatsCount + 1
                 maximizeStats[maximizeStatsCount] = {
                     stat = targetStat.stat.stat,
+                    lowerIsBetter = targetStat.stat.displayStat.lowerIsBetter,
                     actor = targetStat.stat.actor,
                     weight = targetStat.weight
                 }
@@ -46,6 +47,7 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
                 targetStatsCount = targetStatsCount + 1
                 targetStats[targetStatsCount] = {
                     stat = targetStat.stat.stat,
+                    lowerIsBetter = targetStat.stat.displayStat.lowerIsBetter,
                     actor = targetStat.stat.actor,
                     weight = targetStat.weight,
                     target = targetStat.target
@@ -149,7 +151,11 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     self.controls.targetsList.colLabels = true
     self.controls.targetsList.GetRowValue = function(_, column, index, values)
         if column == 3 and self.targetStats[values[4]].isMaximize then
-            return "MAX"
+            if self.targetStats[values[4]].stat.displayStat.lowerIsBetter then
+                return "MIN"
+            else
+                return "MAX"
+            end
         end
 
         return values[column]
@@ -182,7 +188,8 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
                 stat = displayStat.stat,
                 actor = 'player',
                 label = displayStat.label,
-                fmt = displayStat.fmt
+                fmt = displayStat.fmt,
+                displayStat = displayStat
             }
 
             self.statsCount = self.statsCount + 1
@@ -197,7 +204,8 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
                 stat = displayStat.stat,
                 actor = 'minion',
                 label = "Minion: " .. displayStat.label,
-                fmt = displayStat.fmt
+                fmt = displayStat.fmt,
+                displayStat = displayStat
             }
 
             self.statsCount = self.statsCount + 1

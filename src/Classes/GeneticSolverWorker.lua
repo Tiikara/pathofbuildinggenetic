@@ -1,56 +1,23 @@
-function GeneticSolverWorker()
-    -- Initialize PoB VM instance
-    arg = { }
+-- Initialize PoB VM instance
+arg = { }
 
-    dofile(ScriptAbsoluteWorkingDir .. 'HeadlessWrapper.lua')
+dofile(ScriptAbsoluteWorkingDir .. 'HeadlessWrapper.lua')
 
-    LoadModule('Classes/GeneticSolverFitnessFunction.lua')
+local calcs = LoadModule("Modules/Calcs")
 
-    local dnaEncoder
-    local sessionParameters
-    local fitnessFunction
+function GeneticWorkerInitializeSession()
+    build.abortSave = true
 
-    local sessionNumber = 0
+    local f = assert(io.open("genetic_build.xml", "rb"))
+    local xmlText = f:read("*all")
+    f:close()
 
-    while true do
-        local dnaCommand = GeneticWorkerReceiveNextCommand()
+    main:SetMode("BUILD", false, "", xmlText)
+    runCallback("OnFrame")
+end
 
-        local currentSessionNumber = GeneticWorkerGetSessionNumber()
-
-        if sessionNumber ~= currentSessionNumber then
-            sessionNumber = currentSessionNumber
-
-            build.abortSave = true
-
-            local f = assert(io.open("genetic_build.xml", "rb"))
-            local xmlText = f:read("*all")
-            f:close()
-
-            main:SetMode("BUILD", false, "", xmlText)
-            runCallback("OnFrame")
-
-            dnaEncoder = GeneticWorkerCreateDnaEncoder(build)
-            fitnessFunction = new("GeneticSolverFitnessFunction", build)
-
-            sessionParameters = GeneticWorkerGetSessionParameters()
-        end
-
-        if dnaCommand.handler then
-            local dnaConvertResult = dnaEncoder:ConvertDnaCommandHandlerToBuild(build,
-                    dnaCommand.handler,
-                    sessionParameters.targetNormalNodesCount,
-                    sessionParameters.targetAscendancyNodesCount
-            );
-
-            local fitnessScore = fitnessFunction:CalculateAndGetFitnessScore(
-                    dnaConvertResult,
-                    sessionParameters.targetNormalNodesCount,
-                    sessionParameters.targetAscendancyNodesCount,
-                    sessionParameters.targetStats,
-                    sessionParameters.maximizeStats
-            )
-
-            GeneticWorkerSetResultToHandler(dnaCommand.handler, fitnessScore)
-        end
-    end
+function GeneticWorkerCalculateStats()
+    local env, _, _, _ = calcs.initEnv(build, "MAIN")
+    calcs.perform(env)
+    return env
 end

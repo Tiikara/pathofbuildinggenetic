@@ -38,3 +38,4 @@ src/Data/TimelessJewelData/*.bin
 src/genetic_build.xml
 src/error_thread.txt
 */rust_panic.txt
+/runtime_x64/
