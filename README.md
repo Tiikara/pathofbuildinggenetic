@@ -8,13 +8,4 @@
 
 # Last dev changes
 
-* Fix targets fitness score calculation
-* Improve fitness score calculation for used number of nodes
-* Improve performance of fitness score calculation
-* Improve accuracy function for calculation fitness score
-* Added support lower is better
-* Fix decode dna masteries
-* Fix pathfinder with ascendancy nodes
-* Fix path find with limited nodes
-* Automatic adding Mana Cost <= Mana Leech + Mana Regen requirements as targets
-* Automatic adding Str, Dex and Int requirements as targets
+* Fix negative values in fitness calculation
