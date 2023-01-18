@@ -9,4 +9,3 @@
 
 # Last dev changes
 
-* Fix negative values in fitness calculation
