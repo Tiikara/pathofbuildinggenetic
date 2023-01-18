@@ -262,6 +262,15 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     end, "Maximize target stat")
     self.controls.currentStatIsMaximize.enabled = enabledNotInProgressFunc
     self.controls.currentStatIsMaximizeLabel = new("LabelControl", {"RIGHT", self.controls.currentStatIsMaximize, "LEFT"}, -4, 0, 0, 14, "Maximize stat?:")
+    self.controls.currentStatIsMaximizeLabel.label = function()
+        local stat = self.stats[self.selectedStatNumber]
+
+        if stat.displayStat.lowerIsBetter then
+            return "Minimize stat?:"
+        else
+            return "Maximize stat?:"
+        end
+    end
     prevControlAddTargetSection = self.controls.currentStatIsMaximize
     --
     self.controls.addTargetStat = new("ButtonControl", { "TOPLEFT", prevControlAddTargetSection, "BOTTOMLEFT" }, -75, 8, 150, 20, "Add target stat", function()
