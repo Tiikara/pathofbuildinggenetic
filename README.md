@@ -5,7 +5,8 @@
 * Memory leak after restart generation
 * Sometimes one node is not selected in the tree
 * Weights currently disabled
-* During the calculation of the build, the best build is discounted to another worse one
+* Sometimes during the calculation of the build, the best build is discounted to another worse one
 
 # Last dev changes
 
+* Fix pathfinder from masteries
