@@ -64,6 +64,9 @@ function GeneticSolver:IsProgress()
     return self.backendGeneticSolver:IsProgress()
 end
 
+function GeneticSolver:GetCurrentGenerationNumber()
+    return self.backendGeneticSolver:GetCurrentGenerationNumber()
+end
 
 function GeneticSolver:GenerateBuildFromCurrentBestResult()
     local bestDna = self.backendGeneticSolver:GetBestDna()

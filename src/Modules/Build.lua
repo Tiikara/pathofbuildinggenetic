@@ -261,6 +261,17 @@ function buildMode:Init(dbFileName, buildName, buildXML, convertBuild)
 		self.buildFlag = true
 	end)
 
+	self.controls.optimizationProgressLabel = new("LabelControl", {"LEFT",self.controls.ascendDrop,"RIGHT"}, 8, 0, 0, 14, nil)
+	self.controls.optimizationProgressLabel.label = function()
+		if self.optimizationTab and self.optimizationTab.geneticSolver and self.optimizationTab.geneticSolver:IsProgress() then
+			return "Build optimization in progress.. Current generation: " .. self.optimizationTab.geneticSolver:GetCurrentGenerationNumber()
+		end
+	end
+
+	self.controls.optimizationProgressLabel.IsShown = function()
+		return self.optimizationTab and self.optimizationTab.geneticSolver and self.optimizationTab.geneticSolver:IsProgress()
+	end
+
 	-- List of display stats
 	-- This defines the stats in the side bar, and also which stats show in node/item comparisons
 	-- This may be user-customisable in the future
