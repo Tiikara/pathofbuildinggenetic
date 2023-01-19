@@ -7,7 +7,4 @@
 
 # Last dev changes
 
-* Fix pathfinder from masteries
-* Added current generation number in the UI
-* Improve stability fitness score calculation
-* Added much more agressive mutation if stuck on local
+
