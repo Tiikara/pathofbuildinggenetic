@@ -4,7 +4,3 @@
 
 * Memory leak after restart generation
 * Weights currently disabled
-
-# Last dev changes
-
-
