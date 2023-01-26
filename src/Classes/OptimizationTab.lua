@@ -3,10 +3,8 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
 
     self.build = build
 
-    self.maxGenerationCount = 5000
-    self.stopGenerationEps = 100
-    self.countGenerationsMutateEps = 20
-    self.populationMaxGenerationSize = 5000
+    self.stopGenerationEps = 500
+    self.populationMaxGenerationSize = 1000
 
     self.targetNormalNodesCount = 100
     self.targetAscendancyNodesCount = 6
@@ -56,9 +54,7 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
         end
 
         self.geneticSolver:StartSolve(
-                self.maxGenerationCount,
                 self.stopGenerationEps,
-                self.countGenerationsMutateEps,
                 self.populationMaxGenerationSize,
                 self.targetNormalNodesCount,
                 self.targetAscendancyNodesCount,
@@ -73,21 +69,11 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     end)
     self.controls.stop.enabled = function() return enabledNotInProgressFunc() == false end
 
-    self.controls.geneticOptionSection = new("SectionControl", {"TOPLEFT", self.controls.start, "BOTTOMLEFT"}, 0, 60, 400, 120, "Genetic Options")
+    self.controls.geneticOptionSection = new("SectionControl", {"TOPLEFT", self.controls.start, "BOTTOMLEFT"}, 0, 60, 400, 80, "Genetic Options")
     local prevControlGeneticOptionSection = self.controls.geneticOptionSection
 
     --
-    self.controls.maxGenerationCount = new("EditControl", { "TOPLEFT", prevControlGeneticOptionSection, "TOPLEFT" }, 8 + 200, 20, 90, 18, tostring(self.maxGenerationCount), nil, "%D", 7, function(buf, placeholder)
-        self.maxGenerationCount = tonumber(buf)
-    end)
-    self.controls.maxGenerationCount.tooltipText = function()
-        return "Max generations used by genetic algorithm"
-    end
-    self.controls.maxGenerationCount.enabled = enabledNotInProgressFunc
-    self.controls.controlMaxGenerationCountLabel = new("LabelControl", {"RIGHT", self.controls.maxGenerationCount, "LEFT"}, -4, 0, 0, 14, "Max generations number:")
-    prevControlGeneticOptionSection = self.controls.maxGenerationCount
-    --
-    self.controls.stopGenerationEps = new("EditControl", { "TOPLEFT", prevControlGeneticOptionSection, "BOTTOMLEFT" }, 0, 4, 90, 18, tostring(self.stopGenerationEps), nil, "%D", 7, function(buf, placeholder)
+    self.controls.stopGenerationEps = new("EditControl", { "TOPLEFT", prevControlGeneticOptionSection, "TOPLEFT" }, 8 + 200, 20, 90, 18, tostring(self.stopGenerationEps), nil, "%D", 7, function(buf, placeholder)
         self.stopGenerationEps = tonumber(buf)
     end)
     self.controls.stopGenerationEps.tooltipText = function()
@@ -96,16 +82,6 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
     self.controls.stopGenerationEps.enabled = enabledNotInProgressFunc
     self.controls.stopGenerationEpsLabel = new("LabelControl", {"RIGHT", self.controls.stopGenerationEps, "LEFT"}, -4, 0, 0, 14, "Stop generation eps:")
     prevControlGeneticOptionSection = self.controls.stopGenerationEps
-    --
-    self.controls.countGenerationsMutateEps = new("EditControl", { "TOPLEFT", prevControlGeneticOptionSection, "BOTTOMLEFT" }, 0, 4, 90, 18, tostring(self.countGenerationsMutateEps), nil, "%D", 7, function(buf, placeholder)
-        self.countGenerationsMutateEps = tonumber(buf)
-    end)
-    self.controls.countGenerationsMutateEps.tooltipText = function()
-        return "Number of generations after which more aggressive mutations are included"
-    end
-    self.controls.countGenerationsMutateEps.enabled = enabledNotInProgressFunc
-    self.controls.countGenerationsMutateEpsLabel = new("LabelControl", {"RIGHT", self.controls.countGenerationsMutateEps, "LEFT"}, -4, 0, 0, 14, "Number generations mutate eps:")
-    prevControlGeneticOptionSection = self.controls.countGenerationsMutateEps
     --
     self.controls.populationMaxGenerationSize = new("EditControl", { "TOPLEFT", prevControlGeneticOptionSection, "BOTTOMLEFT" }, 0, 4, 90, 18, tostring(self.populationMaxGenerationSize), nil, "%D", 7, function(buf, placeholder)
         self.populationMaxGenerationSize = tonumber(buf)
@@ -329,9 +305,7 @@ end
 
 function OptimizationTabClass:Save(xml)
     xml.attrib = {
-        maxGenerationCount = tostring(self.maxGenerationCount),
         stopGenerationEps = tostring(self.stopGenerationEps),
-        countGenerationsMutateEps = tostring(self.countGenerationsMutateEps),
         populationMaxGenerationSize = tostring(self.populationMaxGenerationSize),
 
         targetNormalNodesCount = tostring(self.targetNormalNodesCount),
@@ -363,16 +337,8 @@ end
 function OptimizationTabClass:Load(xml, _)
     local attrib = xml.attrib
     if attrib then
-        if attrib.maxGenerationCount ~= nil then
-            self.controls.maxGenerationCount:SetText(attrib.maxGenerationCount, true)
-        end
-
         if attrib.stopGenerationEps ~= nil then
             self.controls.stopGenerationEps:SetText(attrib.stopGenerationEps, true)
-        end
-
-        if attrib.countGenerationsMutateEps ~= nil then
-            self.controls.countGenerationsMutateEps:SetText(attrib.countGenerationsMutateEps, true)
         end
 
         if attrib.populationMaxGenerationSize ~= nil then

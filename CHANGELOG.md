@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.0.4
+## v0.1.0
 
 * Added automatic targets for ManaUnreserved -> Mana Cost
-* Increased convergence speed
+* Greatly improved accuracy with NSGA-II

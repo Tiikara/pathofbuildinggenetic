@@ -12,9 +12,7 @@ function GeneticSolver:AllocateWorkersIfNotExists()
     end
 end
 
-function GeneticSolver:StartSolve(maxGenerationsCount,
-                                  stopGenerationEps,
-                                  countGenerationsMutateEps,
+function GeneticSolver:StartSolve(stopGenerationEps,
                                   populationMaxGenerationSize,
                                   targetNormalNodesCount,
                                   targetAscendancyNodesCount,
@@ -39,9 +37,7 @@ function GeneticSolver:StartSolve(maxGenerationsCount,
     self.dnaEncoder = path_of_building_genetic_solver.CreateDnaEncoder(self.build)
 
     self.backendGeneticSolver:StartSolve(
-            maxGenerationsCount,
             stopGenerationEps,
-            countGenerationsMutateEps,
             populationMaxGenerationSize,
             self.dnaEncoder:GetTreeNodesCount(),
             self.dnaEncoder:GetMasteryCount(),
