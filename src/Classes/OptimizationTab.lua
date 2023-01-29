@@ -174,6 +174,7 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
             statsPlayer[displayStat.stat] = stat
         end
     end
+
     for _, displayStat in pairs(self.build.minionDisplayStats) do
         if displayStat.stat then
             local stat = {
@@ -186,7 +187,6 @@ local OptimizationTabClass = newClass("OptimizationTab", "ControlHost", function
 
             self.statsCount = self.statsCount + 1
             self.stats[self.statsCount] = stat
-
 
             statsMinion[displayStat.stat] = stat
         end
@@ -363,15 +363,19 @@ function OptimizationTabClass:Load(xml, _)
                     local statAttrib = targetStatsNode.attrib
 
                     if statAttrib then
-                        local stat = self.statsByActor[statAttrib.actor][statAttrib.stat]
+                        local actorStat = self.statsByActor[statAttrib.actor]
 
-                        self.targetStats[stat.stat] = {
-                            stat = stat,
-                            label = stat.label,
-                            weight = tonumber(statAttrib.weight),
-                            target = tonumber(statAttrib.target),
-                            isMaximize = statAttrib.isMaximize == "true"
-                        }
+                        if actorStat and actorStat[statAttrib.stat] then
+                            local stat = actorStat[statAttrib.stat]
+
+                            self.targetStats[stat.stat] = {
+                                stat = stat,
+                                label = stat.label,
+                                weight = tonumber(statAttrib.weight),
+                                target = tonumber(statAttrib.target),
+                                isMaximize = statAttrib.isMaximize == "true"
+                            }
+                        end
                     end
                 end
             end
